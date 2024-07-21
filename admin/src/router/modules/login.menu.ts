@@ -40,6 +40,15 @@ const routes: RouteRecordRaw = {
         title: '短信验证登录',
         icon: 'menu-message',
       },
+    },
+    {
+      path: 'qcloud-phone',
+      name: 'QcloudPhoneMenu',
+      component: () => import('@/views/users/qcloudPhone.vue'),
+      meta: {
+        title: '短信验证登录(腾讯云)',
+        icon: 'menu-message',
+      },
     }
   ],
 }

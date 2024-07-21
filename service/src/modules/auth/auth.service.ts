@@ -253,7 +253,8 @@ export class AuthService {
     }
     const code = createRandomCode();
     const messageInfo = { phone, code };
-    await this.verificationService.sendPhoneCode(messageInfo);
+    // await this.verificationService.sendPhoneCode(messageInfo);
+    await this.verificationService.sendPhoneCodeWithQcloud(messageInfo);
     /* 记录发送的验证码是什么 */
     await this.redisCacheService.set({ key, val: code }, 1 * 60);
     return '验证码发送成功、请填写验证码完成注册！';
