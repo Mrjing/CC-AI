@@ -76,6 +76,8 @@ export interface GlobalConfig {
 	emailLoginStatus: string
 	phoneLoginStatus: string
 	phoneRegisterStatus: string
+	qcloudPhoneLoginStatus: string // 腾讯云短信
+	qcloudPhoneRegisterStatus: string // 腾讯云短信
 	wechatRegisterStatus: string
 	wechatSilentLoginStatus: string
 	signInStatus: string

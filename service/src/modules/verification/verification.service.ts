@@ -11,8 +11,11 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { createRandomCode } from '@/common/utils';
 import { UserStatusEnum } from '@/common/constants/user.constant';
 import { RedisCacheService } from '../redisCache/redisCache.service';
+import * as smsSDK from 'tencentcloud-sdk-nodejs-sms';
 
 import * as Core from '@alicloud/pop-core';
+
+const smsClient = smsSDK.sms.v20210111.Client;
 
 @Injectable()
 export class VerificationService {
@@ -90,6 +93,40 @@ export class VerificationService {
         throw new HttpException(response.Message || '验证码发送失败！', HttpStatus.BAD_REQUEST);
       }
     } catch (error) {
+      throw new HttpException(error?.data?.Message || '验证码发送失败！', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async sendPhoneCodeWithQcloud(messageInfo: any) {
+    const { secretId, secretKey, signName, templateId, sdkAppId } = await this.globalConfigService.getQcloudPhoneVerifyConfig();
+    const { phone, code } = messageInfo;
+    if (!phone || !code) {
+      throw new HttpException('确实必要参数错误！', HttpStatus.BAD_REQUEST);
+    }
+    const client = new smsClient({
+      credential: {
+        secretId,
+        secretKey,
+      },
+      region: 'ap-beijing',
+      profile: {
+        httpProfile: {
+          endpoint: 'sms.tencentcloudapi.com',
+        },
+      },
+    });
+    const params = {
+      PhoneNumberSet: [phone],
+      SmsSdkAppId: sdkAppId,
+      TemplateId: templateId,
+      SignName: signName,
+      TemplateParamSet: [code + '', '2'],
+    };
+    try {
+      const response = await client.SendSms(params);
+      console.log(response);
+    } catch (error) {
+      console.log('error', error);
       throw new HttpException(error?.data?.Message || '验证码发送失败！', HttpStatus.BAD_REQUEST);
     }
   }
