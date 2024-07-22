@@ -105,6 +105,7 @@ export class GlobalConfigService implements OnModuleInit {
       data: { errmsg, access_token },
     } = await axios.get(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${secret}`);
     if (errmsg) {
+      console.log('errMsg', errmsg);
       if (isInit) {
         Logger.error(`获取微信access_token失败、错误信息：${errmsg}`, 'OfficialService');
       } else {
@@ -177,9 +178,11 @@ export class GlobalConfigService implements OnModuleInit {
       'companyName',
       'filingNumber',
       'phoneRegisterStatus',
+      'qcloudPhoneRegisterStatus',
       'emailRegisterStatus',
       'emailLoginStatus',
       'phoneLoginStatus',
+      'qcloudPhoneLoginStatus',
       'wechatRegisterStatus',
       'wechatSilentLoginStatus',
       'signInStatus',
@@ -249,6 +252,7 @@ export class GlobalConfigService implements OnModuleInit {
   async queryConfig(body: QueryConfigDto, req: Request) {
     const { role } = req.user;
     const { keys } = body;
+
     const data = await this.configEntity.find({ where: { configKey: In(keys) } });
     /* 对演示账户的一些敏感配置修改处理 */
     if (role !== 'super') {
@@ -381,7 +385,7 @@ export class GlobalConfigService implements OnModuleInit {
     return { siteName, qqNumber, vxNumber, registerBaseUrl, domain };
   }
 
-  /* get phone verify config */
+  /* get ali phone verify config */
   async getPhoneVerifyConfig() {
     const { phoneRegisterStatus, aliPhoneAccessKeyId, aliPhoneAccessKeySecret, aliPhoneSignName, aliPhoneTemplateCode } = await this.getConfigs([
       'phoneRegisterStatus',
@@ -398,6 +402,29 @@ export class GlobalConfigService implements OnModuleInit {
       accessKeySecret: aliPhoneAccessKeySecret,
       SignName: aliPhoneSignName,
       TemplateCode: aliPhoneTemplateCode,
+    };
+  }
+
+  /* get qcloud phone verify config */
+  async getQcloudPhoneVerifyConfig() {
+    const { qcloudPhoneRegisterStatus, qcloudSecretId, qcloudSecretKey, qcloudPhoneSignName, qcloudSMSTemplateId, qcloudSMSSDKAppId } =
+      await this.getConfigs([
+        'qcloudPhoneRegisterStatus',
+        'qcloudSecretId',
+        'qcloudSecretKey',
+        'qcloudPhoneSignName',
+        'qcloudSMSTemplateId',
+        'qcloudSMSSDKAppId',
+      ]);
+    if (Number(qcloudPhoneRegisterStatus) !== 1) {
+      throw new HttpException('手机验证码功能暂未开放!', HttpStatus.BAD_REQUEST);
+    }
+    return {
+      secretId: qcloudSecretId,
+      secretKey: qcloudSecretKey,
+      signName: qcloudPhoneSignName,
+      templateId: qcloudSMSTemplateId,
+      sdkAppId: qcloudSMSSDKAppId,
     };
   }
 

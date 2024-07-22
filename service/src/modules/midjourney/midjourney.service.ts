@@ -31,8 +31,7 @@ export class MidjourneyService {
     // private readonly badwordsService: BadwordsService,
     private readonly userBalanceService: UserBalanceService,
     private redisCacheService: RedisCacheService,
-  ) { }
-
+  ) {}
 
   private lockPrompt = [];
 
@@ -58,7 +57,7 @@ export class MidjourneyService {
   async draw(jobData, jobId) {
     const { id, action, drawId } = jobData;
     const drawInfo = await this.midjourneyEntity.findOne({ where: { id } });
-    const { customId } = drawInfo
+    const { customId } = drawInfo;
     try {
       /* 把任务ID绑定到DB去 */
       await this.bindJobId(id, jobId);
@@ -70,7 +69,7 @@ export class MidjourneyService {
       /* 把所有绘制记录存入 */
       await this.updateDrawData(jobData, drawRes);
       // await this.updateDrawStatus(id, MidjourneyStatusEnum.DRAWED);
-      this.drawSuccess(jobData)
+      this.drawSuccess(jobData);
       return true;
     } catch (error) {
       // this.lockPrompt = this.lockPrompt.filter((item) => item !== drawInfo.randomDrawId);
@@ -121,7 +120,7 @@ export class MidjourneyService {
       // 组合时间戳和id生成文件名
       let filename = `${Date.now()}-${id}.png`; // 替换 '.ext' 为实际的文件扩展名
 
-      const mjNotSaveImg = await this.globalConfigService.getConfigs(['mjNotSaveImg'])
+      const mjNotSaveImg = await this.globalConfigService.getConfigs(['mjNotSaveImg']);
       let cosUrl = '';
       let isSaveImg = true;
 
@@ -161,7 +160,6 @@ export class MidjourneyService {
     }
   }
 
-
   // /* 获取到当前ID的历史已经存入的信息并且绘制完成的 防止已经存过的图又被存了 */
   // async getHistroyMessageIds(randomDrawId) {
   //   const res = await this.midjourneyEntity.find({ where: { status: MidjourneyStatusEnum.DRAWED } });
@@ -170,8 +168,8 @@ export class MidjourneyService {
 
   /* 发送绘画指令 */
   async sendDrawCommand(drawInfo, action) {
-    const mjProxyUrl = (await this.globalConfigService.getConfigs(['mjProxyUrl']));
-    const mjKey = (await this.globalConfigService.getConfigs(['mjKey']));
+    const mjProxyUrl = await this.globalConfigService.getConfigs(['mjProxyUrl']);
+    const mjKey = await this.globalConfigService.getConfigs(['mjKey']);
     const { id, fullPrompt, imgUrl, drawId, customId } = drawInfo;
     const prompt = imgUrl ? `${imgUrl} ${fullPrompt}` : `${fullPrompt}`;
     let url = '';
@@ -188,9 +186,12 @@ export class MidjourneyService {
           url = `${mjProxyUrl}/mj/submit/action`;
           payloadJson = { taskId: drawId, customId: customId };
         }
-        const headers = { "mj-api-secret": mjKey };
+        const headers = { 'mj-api-secret': mjKey };
+        console.log('url', url);
+        console.log('payloadJson', payloadJson);
         const res = await axios.post(url, payloadJson, { headers });
         const { result } = res.data;
+        console.log('res', res.data);
         if (result) {
           Logger.log(`绘画ID: ${result}`, 'MidjourneyService');
           return result;
@@ -198,6 +199,7 @@ export class MidjourneyService {
           throw new Error('未能获取结果数据');
         }
       } catch (error) {
+        console.log('error', error);
         retryCount++;
         if (retryCount >= MAX_RETRIES) {
           await this.updateDrawStatus(id, MidjourneyStatusEnum.DRAWFAIL);
@@ -209,8 +211,8 @@ export class MidjourneyService {
 
   /* 等待绘画结果 */
   async pollComparisonResultDraw(id, drawInfo) {
-    const mjProxyUrl = (await this.globalConfigService.getConfigs(['mjProxyUrl']));
-    const mjKey = (await this.globalConfigService.getConfigs(['mjKey']));
+    const mjProxyUrl = await this.globalConfigService.getConfigs(['mjProxyUrl']);
+    const mjKey = await this.globalConfigService.getConfigs(['mjKey']);
     const startTime = Date.now();
     const POLL_INTERVAL = 5000; // 每5秒查一次
     const TIMEOUT = 150000; // 超时时间 150秒
@@ -221,13 +223,13 @@ export class MidjourneyService {
 
     try {
       while (Date.now() - startTime < TIMEOUT && retryCount < MAX_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
         // Logger.debug(`【绘制图片】第 ${pollingCount + 1} 次开始查询, 使用 drawId: ${drawId}`, 'MidjourneyService');
 
         try {
           const headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "mj-api-secret": mjKey
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'mj-api-secret': mjKey,
           };
           const url = `${mjProxyUrl}/mj/task/${drawId}/fetch`;
           const res = await axios.get(url, { headers });
@@ -309,7 +311,21 @@ export class MidjourneyService {
         order: { id: 'DESC' },
         take: size,
         skip: (page - 1) * size,
-        select: ['id', 'userId', 'prompt', 'extraParam', 'fullPrompt', 'rec', 'orderId', 'drawId', 'drawUrl', 'drawRatio', 'isDelete', 'status', 'action']
+        select: [
+          'id',
+          'userId',
+          'prompt',
+          'extraParam',
+          'fullPrompt',
+          'rec',
+          'orderId',
+          'drawId',
+          'drawUrl',
+          'drawRatio',
+          'isDelete',
+          'status',
+          'action',
+        ],
       });
       const countQueue = await this.midjourneyEntity.count({ where: { isDelete: 0, status: In([1, 2]) } });
       const data: any = { rows: formatCreateOrUpdateDate(rows), count, countQueue };
@@ -373,34 +389,30 @@ export class MidjourneyService {
 
     let currentButton;
     if (action === 'UPSCALE') {
-      currentButton = buttons.find(button => {
+      currentButton = buttons.find((button) => {
         // 检查是否为U1, U2, U3, U4格式的标签
         const isStandardUpscale = button.label.startsWith(`U${orderId}`);
         // 检查是否为Upscale (Subtle) 或 Upscale (Creative)格式的标签，无论是否包含其他文字
-        const isUpscaleUpscale = (orderId === 1 && /(Redo )?Upscale \(Subtle\)/.test(button.label)) ||
-          (orderId === 2 && /(Redo )?Upscale \(Creative\)/.test(button.label));
+        const isUpscaleUpscale =
+          (orderId === 1 && /(Redo )?Upscale \(Subtle\)/.test(button.label)) || (orderId === 2 && /(Redo )?Upscale \(Creative\)/.test(button.label));
         return isStandardUpscale || isUpscaleUpscale;
       });
     }
     if (action === 'VARIATION') {
-      currentButton = buttons.find(button => {
+      currentButton = buttons.find((button) => {
         // 检查是否为V1, V2, V3, V4格式的标签
         const isStandardVariation = button.label.startsWith(`V${orderId}`);
         // 检查是否为Vary (Strong) 或 Vary (Region)格式的标签，无论是否包含其他文字
-        const isVaryVariation = (orderId === 1 && /Vary \(Strong\)/.test(button.label)) ||
-          (orderId === 2 && /Vary \(Region\)/.test(button.label));
+        const isVaryVariation = (orderId === 1 && /Vary \(Strong\)/.test(button.label)) || (orderId === 2 && /Vary \(Region\)/.test(button.label));
         return isStandardVariation || isVaryVariation;
       });
     }
     if (action === 'REGENERATE') {
-      currentButton = buttons.find(button =>
-        button.customId.startsWith("MJ::JOB::reroll::0::") && button.label === ""
-      );
+      currentButton = buttons.find((button) => button.customId.startsWith('MJ::JOB::reroll::0::') && button.label === '');
     }
     if (action === 'ZOOM') {
-      currentButton = buttons.find(button =>
-        (orderId === 1 && button.label === "Zoom Out 2x") ||
-        (orderId === 2 && button.label === "Zoom Out 1.5x")
+      currentButton = buttons.find(
+        (button) => (orderId === 1 && button.label === 'Zoom Out 2x') || (orderId === 2 && button.label === 'Zoom Out 1.5x'),
       );
     }
     if (!currentButton) {
@@ -436,8 +448,8 @@ export class MidjourneyService {
     //   return;
     // }
     const count = await this.midjourneyEntity.count({ where: { userId: id, isDelete: 0, status: In([1, 2]) } });
-    const mjLimitCount = await this.globalConfigService.getConfigs(['mjLimitCount'])
-    const max = mjLimitCount ? Number(mjLimitCount) : 2
+    const mjLimitCount = await this.globalConfigService.getConfigs(['mjLimitCount']);
+    const max = mjLimitCount ? Number(mjLimitCount) : 2;
     if (count >= max) {
       throw new HttpException(`当前管理员限制单用户同时最多能执行${max}个任务`, HttpStatus.BAD_REQUEST);
     }
@@ -456,8 +468,8 @@ export class MidjourneyService {
   async drawSuccess(jobData) {
     const { id, userId, action } = jobData;
     /* 扣除余额 放大图片（类型2）是1 其他都是4 */
-    const amount = action === "UPSCALE" ? 1 : 4;
-    Logger.debug(`绘画完成，执行扣费，扣除费用:${amount}积分。`)
+    const amount = action === 'UPSCALE' ? 1 : 4;
+    Logger.debug(`绘画完成，执行扣费，扣除费用:${amount}积分。`);
     await this.userBalanceService.refundMjBalance(userId, -amount);
     await this.midjourneyEntity.update({ id }, { status: 3 });
   }
@@ -507,9 +519,9 @@ export class MidjourneyService {
 
   /* 获取完整的绘画提示词 */
   async getFullPrompt(id: number) {
-    const m = await this.midjourneyEntity.findOne({ where: { id } })
-    if (!m) return ''
-    const { fullPrompt } = m
+    const m = await this.midjourneyEntity.findOne({ where: { id } });
+    if (!m) return '';
+    const { fullPrompt } = m;
     return fullPrompt;
   }
 
@@ -528,7 +540,7 @@ export class MidjourneyService {
         skip: (page - 1) * size,
       });
 
-      const userIds = rows.map((item: any) => item.userId).filter(id => id < 100000);
+      const userIds = rows.map((item: any) => item.userId).filter((id) => id < 100000);
       const userInfos = await this.userEntity.find({ where: { id: In(userIds) }, select: ['id', 'username', 'avatar', 'email'] });
       rows.forEach((item: any) => {
         item.userInfo = userInfos.find((user) => user.id === item.userId);
@@ -592,11 +604,11 @@ export class MidjourneyService {
 
   async setPrompt(req: Request, body) {
     try {
-      const { prompt, status, isCarryParams, title, order, id, aspect } = body
+      const { prompt, status, isCarryParams, title, order, id, aspect } = body;
       if (id) {
-        return await this.mjPromptsEntity.update({ id }, { prompt, status, isCarryParams, order, aspect })
+        return await this.mjPromptsEntity.update({ id }, { prompt, status, isCarryParams, order, aspect });
       } else {
-        return await this.mjPromptsEntity.save({ prompt, status, isCarryParams, title, order, aspect })
+        return await this.mjPromptsEntity.save({ prompt, status, isCarryParams, title, order, aspect });
       }
     } catch (error) {
       console.log('error: ', error);
@@ -604,25 +616,24 @@ export class MidjourneyService {
   }
 
   async delPrompt(req: Request, body) {
-    const { id } = body
+    const { id } = body;
     if (!id) {
       throw new HttpException('非法操作！', HttpStatus.BAD_REQUEST);
     }
-    return await this.mjPromptsEntity.delete({ id })
+    return await this.mjPromptsEntity.delete({ id });
   }
 
   async queryPrompt() {
     return await this.mjPromptsEntity.find({
       order: { order: 'DESC' },
-    })
+    });
   }
 
   async proxyImg(params) {
-    const { url } = params
-    if (!url) return
+    const { url } = params;
+    if (!url) return;
     const response = await axios.get(url, { responseType: 'arraybuffer' });
     const base64 = Buffer.from(response.data).toString('base64');
-    return base64
+    return base64;
   }
 }
-
