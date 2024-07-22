@@ -1,11 +1,13 @@
 # build chat
 FROM node:lts-alpine AS chat
 
-RUN npm config set registry https://mirrors.huaweicloud.com/repository/npm/
+RUN npm config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
 COPY /chat/package.json /app
+
+COPY /chat/package-lock.json /app
 
 RUN npm install
 
@@ -16,7 +18,7 @@ RUN npm build
 # build admin
 FROM node:lts-alpine AS admin
 
-RUN npm config set registry https://mirrors.huaweicloud.com/repository/npm/
+RUN npm config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
@@ -31,7 +33,7 @@ RUN npm build
 # build service
 FROM node:lts-alpine AS service
 
-RUN npm config set registry https://mirrors.huaweicloud.com/repository/npm/
+RUN npm config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
@@ -46,7 +48,7 @@ RUN npm build
 # build final image
 FROM node:lts-alpine
 
-RUN npm config set registry https://mirrors.huaweicloud.com/repository/npm/
+RUN npm config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
