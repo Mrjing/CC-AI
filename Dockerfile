@@ -1,5 +1,5 @@
 # build chat
-FROM node:lts-alpine AS chat
+FROM node:18-alpine AS chat
 
 RUN npm install pnpm -g
 
