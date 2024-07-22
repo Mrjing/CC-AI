@@ -1,58 +1,58 @@
 # build chat
 FROM node:lts-alpine AS chat
 
-RUN npm install pnpm -g
+RUN npm config set registry https://registry.npmmirror.com/
 
 WORKDIR /app
 
 COPY /chat/package.json /app
 
-RUN pnpm install
+RUN npm install
 
 COPY /chat /app
 
-RUN pnpm build
+RUN npm build
 
 # build admin
 FROM node:lts-alpine AS admin
 
-RUN npm install pnpm -g
+RUN npm config set registry https://registry.npmmirror.com/
 
 WORKDIR /app
 
 COPY /admin/package.json /app
 
-RUN pnpm install
+RUN npm install
 
 COPY /admin /app
 
-RUN pnpm build
+RUN npm build
 
 # build service
 FROM node:lts-alpine AS service
 
-RUN npm install pnpm -g
+RUN npm config set registry https://registry.npmmirror.com/
 
 WORKDIR /app
 
 COPY /service/package.json /app
 
-RUN pnpm install
+RUN npm install
 
 COPY /service /app
 
-RUN pnpm build
+RUN npm build
 
 # build final image
 FROM node:lts-alpine
 
-RUN npm install pnpm -g
+RUN npm config set registry https://registry.npmmirror.com/
 
 WORKDIR /app
 
 COPY /service/package.json /app
 
-RUN pnpm install
+RUN npm install
 
 COPY /YiAiQuickDeploy /app
 
@@ -78,4 +78,4 @@ COPY --from=service /app/dist /app/dist
 
 EXPOSE 9520
 
-CMD ["pnpm", "start"]
+CMD ["npm", "start"]
