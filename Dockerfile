@@ -1,9 +1,9 @@
 # build chat
-FROM node:18.20.4-alpine AS chat
+FROM node:18-alpine AS chat
+
+RUN npm config set registry https://registry.npmmirror.com
 
 RUN npm install pnpm -g
-
-RUN pnpm config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
