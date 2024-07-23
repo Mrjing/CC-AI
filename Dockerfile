@@ -3,7 +3,7 @@ FROM node:18-alpine AS chat
 
 RUN npm config set registry https://registry.npmmirror.com
 
-# RUN npm install pnpm -g
+RUN npm install pnpm -g
 
 WORKDIR /app
 
@@ -11,11 +11,11 @@ COPY /chat/package.json /app
 
 COPY /chat/package-lock.json /app
 
-RUN npm install
+RUN pnpm install --verbose
 
 COPY /chat /app
 
-RUN npm build
+RUN pnpm build
 
 # build admin
 FROM node:lts-alpine AS admin
