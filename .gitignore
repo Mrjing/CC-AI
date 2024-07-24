@@ -22,3 +22,6 @@ service/**/.env
 *.log
 *.iml
 node_modules/
+
+YiAiQuickDeploy/logs
+YiAiQuickDeploy/.env
