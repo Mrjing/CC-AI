@@ -4,7 +4,7 @@ import { BaseEntity } from 'src/common/entity/baseEntity';
 
 @Entity({ name: 'crami_package' })
 export class CramiPackageEntity extends BaseEntity {
-  @Column({ unique: true, comment: '套餐名称' })
+  @Column({ unique: true, comment: '套餐名称', type: 'varchar', length: 100 })
   name: string;
 
   @Column({ comment: '套餐介绍详细信息' })
