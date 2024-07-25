@@ -11,7 +11,7 @@ const config: ConnectionOptions = {
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   logging: false,
   synchronize: true,
-  charset: 'utf8mb4',
+  charset: 'utf8',
   // timezone: 'Z',
   timezone: '+08:00',
 };
