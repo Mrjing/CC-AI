@@ -9,7 +9,7 @@ const config: ConnectionOptions = {
   password: process.env.DB_PASS,
   database: process.env.DB_DATABASE,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  logging: false,
+  logging: true,
   synchronize: true,
   charset: 'utf8',
   // timezone: 'Z',
