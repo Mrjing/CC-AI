@@ -4,7 +4,7 @@ import { BaseEntity } from 'src/common/entity/baseEntity';
 
 @Entity({ name: 'gpt_keys' })
 export class GptKeysEntity extends BaseEntity {
-  @Column({ unique: true, comment: 'gpt key', length: 255 })
+  @Column({ unique: true, comment: 'gpt key', length: 100 })
   key: string;
 
   @Column({ comment: '使用的状态: 0:禁用 1：启用', default: 0 })
