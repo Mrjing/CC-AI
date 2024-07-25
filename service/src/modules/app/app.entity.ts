@@ -4,7 +4,7 @@ import { BaseEntity } from 'src/common/entity/baseEntity';
 
 @Entity({ name: 'app' })
 export class AppEntity extends BaseEntity {
-  @Column({ unique: true, comment: 'App应用名称' })
+  @Column({ unique: true, comment: 'App应用名称', length: 100 })
   name: string;
 
   @Column({ comment: 'App分类Id' })
