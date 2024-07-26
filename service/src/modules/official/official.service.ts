@@ -17,7 +17,7 @@ export class OfficialService {
     private readonly authService: AuthService,
     private readonly globalConfigService: GlobalConfigService,
     private readonly chatgptService: ChatgptService
-  ) {}
+  ) { }
   private sceneStrMap = {};
   private scanedSceneStrMap = {};
 
@@ -70,10 +70,12 @@ export class OfficialService {
   async fetchQRCodeTicket(sceneStr: string) {
     const accessToken = await this.globalConfigService.getConfigs(['wechatAccessToken']);
     const params = { action_name: 'QR_STR_SCENE', action_info: { scene: { scene_str: sceneStr } } };
+    console.log('accessToken***', accessToken)
     const res = await axios.post(`https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=${accessToken}`, params);
     const {
       data: { errmsg, ticket },
     } = res;
+    console.log('qrcodecreate', res)
     if (errmsg) throw new HttpException(errmsg, HttpStatus.BAD_REQUEST);
     return ticket;
   }
