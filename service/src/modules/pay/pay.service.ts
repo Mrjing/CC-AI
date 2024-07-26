@@ -313,6 +313,7 @@ export class PayService {
       'payWeChatPublicKey',
       'payWeChatPrivateKey',
     ]);
+
     const pay = new this.WxPay({
       appid: payWeChatAppId,
       mchid: payWeChatMchId,
@@ -358,6 +359,11 @@ export class PayService {
         'payWeChatH5Name',
         'payWeChatH5Url',
       ]);
+    console.log('payWeChatAppId', payWeChatAppId)
+    console.log('payWeChatMchId', payWeChatMchId)
+    console.log('payWeChatPublicKey', payWeChatPublicKey)
+    console.log('payWeChatPrivateKey', payWeChatPrivateKey)
+
     const pay = new this.WxPay({
       appid: payWeChatAppId,
       mchid: payWeChatMchId,
@@ -438,13 +444,6 @@ export class PayService {
     const { payWeChatAppId, payWeChatMchId, payWeChatPublicKey, payWeChatPrivateKey, payWeChatNotifyUrl, payWeChatH5Name, payWeChatH5Url } =
       await this.globalConfigService.getConfigs(['payWeChatAppId', 'payWeChatMchId', 'payWeChatPublicKey', 'payWeChatPrivateKey']);
 
-    // 读取环境变量 payWeChatPublicKey, payWeChatPrivateKey
-    console.log('env payWeChatPublicKey', process.env.payWeChatPublicKey)
-    console.log('env payWeChatPrivateKey', process.env.payWeChatPrivateKey)
-    console.log('payWeChatPublicKey', payWeChatPublicKey)
-    console.log('payWeChatPrivateKey', payWeChatPrivateKey)
-    console.log('payWeChatAppId', payWeChatAppId)
-    console.log('payWeChatMchId', payWeChatMchId)
     const pay = new this.WxPay({
       appid: payWeChatAppId,
       mchid: payWeChatMchId,
