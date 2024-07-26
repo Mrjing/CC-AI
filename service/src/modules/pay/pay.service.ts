@@ -21,7 +21,7 @@ export class PayService {
     private readonly userBalanceService: UserBalanceService,
     private readonly globalConfigService: GlobalConfigService,
     private readonly userService: UserService,
-  ) {}
+  ) { }
 
   private WxPay;
 
@@ -437,6 +437,14 @@ export class PayService {
     // assemble params
     const { payWeChatAppId, payWeChatMchId, payWeChatPublicKey, payWeChatPrivateKey, payWeChatNotifyUrl, payWeChatH5Name, payWeChatH5Url } =
       await this.globalConfigService.getConfigs(['payWeChatAppId', 'payWeChatMchId', 'payWeChatPublicKey', 'payWeChatPrivateKey']);
+
+    // 读取环境变量 payWeChatPublicKey, payWeChatPrivateKey
+    console.log('env payWeChatPublicKey', process.env.payWeChatPublicKey)
+    console.log('env payWeChatPrivateKey', process.env.payWeChatPrivateKey)
+    console.log('payWeChatPublicKey', payWeChatPublicKey)
+    console.log('payWeChatPrivateKey', payWeChatPrivateKey)
+    console.log('payWeChatAppId', payWeChatAppId)
+    console.log('payWeChatMchId', payWeChatMchId)
     const pay = new this.WxPay({
       appid: payWeChatAppId,
       mchid: payWeChatMchId,
