@@ -24,7 +24,7 @@ export class GlobalConfigService implements OnModuleInit {
     @InjectRepository(ChatLogEntity)
     private readonly chatLogEntity: Repository<ChatLogEntity>,
     private readonly modelsService: ModelsService,
-  ) {}
+  ) { }
   private globalConfigs: any = {};
   private wechatAccessToken: string;
   private wechatJsapiTicket: string;
@@ -86,6 +86,7 @@ export class GlobalConfigService implements OnModuleInit {
 
   /* 定时刷新 access_token */
   async getWechatAccessToken(isInit = false) {
+    console.log('调了一次刷access_token')
     const { wechatOfficialAppId: appId, wechatOfficialAppSecret: secret } = await this.getConfigs(['wechatOfficialAppId', 'wechatOfficialAppSecret']);
     if (!appId || !secret) {
       return Logger.error('还未配置微信的appId和secret、配置后才可进行微信扫码登录！！！', 'OfficialService');
