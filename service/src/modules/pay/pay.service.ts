@@ -369,7 +369,7 @@ export class PayService {
       mchid: payWeChatMchId,
       publicKey: payWeChatPublicKey,
       privateKey: payWeChatPrivateKey,
-      serial_no: "7E331F00653E9F6EB8D4D5392FC45491938D3203"
+      serial_no: process.env.SERIAL_NO
     });
     const params: any = {
       appid: payWeChatAppId,
@@ -429,9 +429,15 @@ export class PayService {
     }
     if (payType == 'native') {
       const res = await pay.transactions_native(params);
-      const { code_url: url_qrcode } = res;
+      const { data, status } = res;
+      if (status !== 200) {
+        throw new HttpException('获取支付二维码失败', res);
+      }
+
+      const { code_url: url_qrcode } = data
+
       if (!url_qrcode) {
-        console.log('wx-native', res);
+        console.log('wx-native 获取二维码地址为空', res);
       }
 
       return { url_qrcode, isRedirect: false };
