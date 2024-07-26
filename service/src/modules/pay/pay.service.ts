@@ -369,6 +369,7 @@ export class PayService {
       mchid: payWeChatMchId,
       publicKey: payWeChatPublicKey,
       privateKey: payWeChatPrivateKey,
+      serial_no: "7E331F00653E9F6EB8D4D5392FC45491938D3203"
     });
     const params: any = {
       appid: payWeChatAppId,
