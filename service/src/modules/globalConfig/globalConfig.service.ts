@@ -103,8 +103,13 @@ export class GlobalConfigService implements OnModuleInit {
       return;
     }
     const {
-      data: { errmsg, access_token },
-    } = await axios.get(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${secret}`);
+      data: { errmsg, access_token, expires_in },
+    } = await axios.post(`https://api.weixin.qq.com/cgi-bin/stable_token`, {
+      grant_type: 'client_credential',
+      appid: appId,
+      secret: secret,
+    });
+    console.log('access_token', access_token, expires_in)
     if (errmsg) {
       console.log('errMsg', errmsg);
       if (isInit) {
