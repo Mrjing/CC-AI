@@ -32,7 +32,7 @@ async function bootstrap() {
 
   createSwagger(app);
   const server = await app.listen(PORT, () => {
-    Logger.log(`服务启动成功: http://localhost:${PORT}/nineai/swagger/docs`, 'Main');
+    Logger.log(`服务启动成功: http://localhost:${PORT}/ccai/swagger/docs`, 'Main');
   });
   server.timeout = 5 * 60 * 1000;
 }

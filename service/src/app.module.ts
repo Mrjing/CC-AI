@@ -27,6 +27,7 @@ import { OfficialModule } from './modules/official/official.module';
 import { TaskModule } from './modules/task/task.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { MidjourneyModule } from './modules/midjourney/midjourney.module';
+import { WujieModule } from './modules/wujie/wujie.module'
 import { ChatGroupModule } from './modules/chatGroup/chatGroup.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import * as fetch from 'isomorphic-fetch';
@@ -70,6 +71,7 @@ import { ModelsModule } from './modules/models/models.module';
     TaskModule,
     QueueModule,
     MidjourneyModule,
+    WujieModule,
     ChatGroupModule,
     SalesModule,
     SigninModule,
@@ -83,4 +85,4 @@ import { ModelsModule } from './modules/models/models.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
