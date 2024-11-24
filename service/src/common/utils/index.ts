@@ -20,3 +20,4 @@ export * from './removeSpecialCharacters';
 export * from './encrypt';
 export * from './compileNetwork';
 export * from './getRandomItemFromArray'
+export * from './getWujieAuth'
