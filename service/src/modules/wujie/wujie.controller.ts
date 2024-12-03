@@ -12,7 +12,7 @@ import { getAuthorization } from '@/common/utils';
 @ApiTags('wujie')
 @Controller('wujie')
 export class WujieController {
-  constructor(private readonly wujieService: WujieService) {}
+  constructor(private readonly wujieService: WujieService) { }
 
   @Get('getModelInfo')
   @ApiOperation({ summary: '获取作画模型列表' })
@@ -32,7 +32,6 @@ export class WujieController {
           Authorization: `${authorization}`,
         },
       });
-      console.log('data', data, parseInt(code));
       if (status !== 200) {
         throw new HttpException('获取模型列表失败', parseInt(code));
       }
@@ -64,21 +63,28 @@ export class WujieController {
         data: JSON.stringify(params),
       };
       const {
-        data: { code, data },
+        data: { code, data, message },
         status,
+        headers
       } = await axios(config);
-      console.log('data', data, code);
-      if (status !== 200) {
-        throw new HttpException('创建默认作画失败', parseInt(code));
+
+      console.log('createWithDefaultAI data', data, code, message, headers);
+      // 业务状态错误码
+      if (parseInt(code) !== 200) {
+        throw new HttpException(code + ' ' + message, 500)
       }
       return data;
     } catch (e) {
-      console.log('error.response.data', e.response.data);
-      console.log('error.config.headers', e.config.headers);
-      console.log('error.response.status', e.response.status);
-      console.log('error.response.statusText', e.response.statusText);
-      console.log('error.response.headers', e.response.headers);
-      throw new HttpException({ desc: '创建默认作画' + e.response.data.message, code: e.response.data.code }, e.response.status);
+      if (e.response.headers) {
+        console.log('error.response.data', e.response.data);
+        console.log('error.config.headers', e.config.headers);
+        console.log('error.response.status', e.response.status);
+        console.log('error.response.statusText', e.response.statusText);
+        console.log('error.response.headers', e.response.headers);
+        throw new HttpException({ desc: '创建默认作画' + e.response.data.message, code: e.response.data.code }, e.response.status);
+      } else {
+        throw e
+      }
     }
   }
 
@@ -101,8 +107,9 @@ export class WujieController {
       const {
         data: { code, data },
         status,
+        headers
       } = await axios(config);
-      console.log('data', data, code);
+      console.log('createWithMJ data', data, code, headers);
       if (status !== 200) {
         throw new HttpException(
           {
@@ -142,7 +149,6 @@ export class WujieController {
         data: { code, data },
         status,
       } = await axios(config);
-      console.log('data', data, code);
       if (status !== 200) {
         throw new HttpException('获取作画风格模型资源失败', parseInt(code));
       }
@@ -176,7 +182,6 @@ export class WujieController {
         data: { code, data },
         status,
       } = await axios(config);
-      console.log('data', data, code);
       if (status !== 200) {
         throw new HttpException('获取作画模型预设资源失败', parseInt(code));
       }
