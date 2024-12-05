@@ -51,7 +51,7 @@ export class UserService {
     private readonly globalConfigService: GlobalConfigService,
     @InjectRepository(ConfigEntity)
     private readonly configEntity: Repository<ConfigEntity>,
-  ) {}
+  ) { }
 
   /* create and verify */
   async createUserAndVerifycation(user: UserEntity | UserRegisterDto, req: Request): Promise<UserEntity> {
@@ -258,6 +258,10 @@ export class UserService {
 
   async queryUserInfoById(id: number): Promise<UserEntity> {
     return await this.userEntity.findOne({ where: { id } });
+  }
+
+  async queryUserInfoByPhone(phone: string): Promise<UserEntity> {
+    return await this.userEntity.findOne({ where: { phone } });
   }
 
   async queryOneUserInfo(userId: number): Promise<UserEntity> {
