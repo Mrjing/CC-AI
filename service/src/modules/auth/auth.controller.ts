@@ -11,12 +11,13 @@ import { UpdatePassByOtherDto } from './dto/updatePassByOther.dto';
 import { SendPhoneCodeDto } from './dto/sendPhoneCode.dto';
 import { UserRegisterByPhoneDto } from './dto/userRegisterByPhone.dto';
 import { LoginByPhoneDto } from './dto/loginByPhone.dt';
+import { LoginByPhoneCodeDto } from './dto/loginByPhoneCode.dto'
 import { AdminLoginDto } from './dto/adminLogin.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   @ApiOperation({ summary: '用户注册' })
@@ -40,6 +41,12 @@ export class AuthController {
   @ApiOperation({ summary: '用户手机号登录' })
   async loginByPhone(@Body() body: LoginByPhoneDto, @Req() req: Request) {
     return this.authService.loginByPhone(body, req);
+  }
+
+  @Post('loginByPhoneCode')
+  @ApiOperation({ summary: '用户手机号验证码登录' })
+  async loginByPhoneCode(@Body() body: LoginByPhoneCodeDto, @Req() req: Request) {
+    return this.authService.loginOrRegisterByPhone(body, req);
   }
 
   @Post('updatePassword')

@@ -1,4 +1,5 @@
 import { LoginByPhoneDto } from './dto/loginByPhone.dt';
+import { LoginByPhoneCodeDto } from './dto/loginByPhoneCode.dto'
 import { GlobalConfigService } from '@/modules/globalConfig/globalConfig.service';
 import { VerifycationEntity } from '../verification/verifycation.entity';
 import { VerificationEnum } from '@/common/constants/verification.constant';
@@ -46,7 +47,7 @@ export class AuthService {
     private readonly userBalanceService: UserBalanceService,
     private readonly redisCacheService: RedisCacheService,
     private readonly globalConfigService: GlobalConfigService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     this.getIp();
@@ -116,6 +117,38 @@ export class AuthService {
     return token;
   }
 
+  /* 针对CC AI客户端的手机号短信验证码注册及登录二合一 */
+  async loginOrRegisterByPhone(body: LoginByPhoneCodeDto, req: Request): Promise<string> {
+    const { phone, code } = body;
+    const nameSpace = await this.globalConfigService.getNamespace();
+    const key = `${nameSpace}:PHONECODE:${phone}`;
+    const redisPhoneCode = await this.redisCacheService.get({ key });
+    if (!redisPhoneCode) {
+      throw new HttpException('验证码已过期、请重新发送！', HttpStatus.BAD_REQUEST);
+    }
+    if (code !== redisPhoneCode) {
+      throw new HttpException('验证码填写错误、请重新输入！', HttpStatus.BAD_REQUEST);
+    }
+
+    // 
+    let user: UserEntity = await this.userService.queryUserInfoByPhone(phone);
+    // user 不存在则创建新用户
+    if (!user) {
+      const email = ``;
+      const newUser: any = { username: `游客小C`, phone, email, status: UserStatusEnum.ACTIVE };
+      const userDefautlAvatar = await this.globalConfigService.getConfigs(['userDefautlAvatar']);
+      newUser.avatar = userDefautlAvatar;
+      user = await this.userService.createUser(newUser);
+    }
+
+    const { username, id, email, role, openId, client } = user;
+    const ip = getClientIp(req);
+    await this.userService.savaLoginIp(id, ip);
+    const token = await this.jwtService.sign({ username, id, email, role, openId, client, phone });
+    await this.redisCacheService.saveToken(id, token);
+    return token
+  }
+
   async loginByOpenId(user: UserEntity, req: Request): Promise<string> {
     const { status } = user;
     if (status !== UserStatusEnum.ACTIVE) {
@@ -170,10 +203,8 @@ export class AuthService {
       }
       await this.userBalanceService.addBalanceToNewUser(id, inviteUser?.id);
       res.redirect(
-        `/api/auth/registerSuccess?id=${id.toString().padStart(4, '0')}&username=${username}&email=${email}&registerSuccessEmailTitle=${
-          configMap.registerSuccessEmailTitle
-        }&registerSuccessEmailTeamName=${configMap.registerSuccessEmailTeamName}&registerSuccessEmaileAppend=${
-          configMap.registerSuccessEmaileAppend
+        `/api/auth/registerSuccess?id=${id.toString().padStart(4, '0')}&username=${username}&email=${email}&registerSuccessEmailTitle=${configMap.registerSuccessEmailTitle
+        }&registerSuccessEmailTeamName=${configMap.registerSuccessEmailTeamName}&registerSuccessEmaileAppend=${configMap.registerSuccessEmaileAppend
         }`,
       );
     } catch (error) {
@@ -242,7 +273,7 @@ export class AuthService {
 
   /* 发送验证码 */
   async sendPhoneCode(body: SendPhoneCodeDto) {
-    await this.verificationService.verifyCaptcha(body);
+    // await this.verificationService.verifyCaptcha(body); // TODO: 临时屏蔽图形验证码校验
     const { phone } = body;
     const nameSpace = await this.globalConfigService.getNamespace();
     const key = `${nameSpace}:PHONECODE:${phone}`;
