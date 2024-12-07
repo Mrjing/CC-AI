@@ -10,10 +10,10 @@ export class SendPhoneCodeDto {
   phone?: string;
 
   @ApiProperty({ example: '2b4i1b4', description: '图形验证码KEY' })
-  @IsNotEmpty({ message: '验证码KEY不能为空' })
+  // @IsNotEmpty({ message: '验证码KEY不能为空' })
   captchaId?: string;
 
   @ApiProperty({ example: '1g4d', description: '图形验证码' })
-  @IsNotEmpty({ message: '验证码不能为空' })
+  // @IsNotEmpty({ message: '验证码不能为空' })
   captchaCode?: string;
 }

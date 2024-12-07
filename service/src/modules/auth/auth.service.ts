@@ -140,7 +140,7 @@ export class AuthService {
       newUser.avatar = userDefautlAvatar;
       user = await this.userService.createUser(newUser);
     }
-
+    console.log('user', user)
     const { username, id, email, role, openId, client } = user;
     const ip = getClientIp(req);
     await this.userService.savaLoginIp(id, ip);
