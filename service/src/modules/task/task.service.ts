@@ -13,13 +13,13 @@ export class TaskService {
     private readonly userBalanceEntity: Repository<UserBalanceEntity>,
     private readonly globalConfigService: GlobalConfigService,
     private readonly modelsService: ModelsService,
-  ) { }
+  ) {}
 
   /* 每小时刷新一次微信的token */
   @Cron(CronExpression.EVERY_HOUR)
   handleCron() {
     Logger.debug('Automatically refresh WeChat access every hour Token', 'TaskService');
-    this.globalConfigService.getWechatAccessToken();
+    this.globalConfigService.getWechatAccessToken().catch((e) => console.log('定时任务异常', e));
   }
 
   /* 每两钟执行一次检测会员过期任务 */

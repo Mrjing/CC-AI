@@ -12,7 +12,7 @@ import { getAuthorization } from '@/common/utils';
 @ApiTags('wujie')
 @Controller('wujie')
 export class WujieController {
-  constructor(private readonly wujieService: WujieService) { }
+  constructor(private readonly wujieService: WujieService) {}
 
   @Get('getModelInfo')
   @ApiOperation({ summary: '获取作画模型列表' })
@@ -65,13 +65,13 @@ export class WujieController {
       const {
         data: { code, data, message },
         status,
-        headers
+        headers,
       } = await axios(config);
 
       console.log('createWithDefaultAI data', data, code, message, headers);
       // 业务状态错误码
       if (parseInt(code) !== 200) {
-        throw new HttpException(code + ' ' + message, 500)
+        throw new HttpException(code + ' ' + message, 500);
       }
       return data;
     } catch (e) {
@@ -83,7 +83,7 @@ export class WujieController {
         console.log('error.response.headers', e.response.headers);
         throw new HttpException({ desc: '创建默认作画' + e.response.data.message, code: e.response.data.code }, e.response.status);
       } else {
-        throw e
+        throw e;
       }
     }
   }
@@ -105,19 +105,14 @@ export class WujieController {
         data: params,
       };
       const {
-        data: { code, data },
+        data: { code, data, message },
         status,
-        headers
+        headers,
       } = await axios(config);
-      console.log('createWithMJ data', data, code, headers);
-      if (status !== 200) {
-        throw new HttpException(
-          {
-            desc: '创建MJ作画失败',
-            code: parseInt(code),
-          },
-          500,
-        );
+      console.log('createWithMJ data', data, code, message, headers);
+      // 业务状态错误码
+      if (parseInt(code) !== 200) {
+        throw new HttpException(code + ' ' + message, 500);
       }
       return data;
     } catch (e) {
@@ -218,7 +213,7 @@ export class WujieController {
       if (status !== 200) {
         throw new HttpException('获取单个作画任务信息失败', parseInt(code));
       }
-      console.log('data', data);
+      // console.log('data', data);
       return data;
     } catch (e) {
       console.log('error.response.data', e.response.data);
@@ -250,7 +245,7 @@ export class WujieController {
         data: { code, data },
         status,
       } = await axios(config);
-      console.log('data', data);
+      // console.log('data', data);
       if (status !== 200) {
         throw new HttpException('批量获取作画任务信息失败', parseInt(code));
       }
@@ -286,7 +281,7 @@ export class WujieController {
         status,
       } = await axios(config);
 
-      console.log('data', data);
+      // console.log('data', data);
       if (status !== 200) {
         throw new HttpException('获取所有历史作画任务列表失败', parseInt(code));
       }
