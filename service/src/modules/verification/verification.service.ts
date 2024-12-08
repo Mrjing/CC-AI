@@ -124,7 +124,7 @@ export class VerificationService {
     };
     try {
       const response = await client.SendSms(params);
-      console.log(response);
+      console.log('sendsms', response);
     } catch (error) {
       console.log('error', error);
       throw new HttpException(error?.data?.Message || '验证码发送失败！', HttpStatus.BAD_REQUEST);
