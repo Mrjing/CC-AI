@@ -8,7 +8,13 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();
-    const exceptionRes: any = exception.getResponse() || 'inter server error';
+    let exceptionRes
+    if (typeof exception?.getResponse === 'function') {
+      exceptionRes = exception.getResponse()
+    } else {
+      exceptionRes = 'inter server error'
+    }
+    console.log('exceptionRes', exceptionRes)
     const message = exceptionRes?.message ? (Array.isArray(exceptionRes) ? exceptionRes['message'][0] : exceptionRes['message']) : exceptionRes;
     const statusCode = exception.getStatus() || 400;
     const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;

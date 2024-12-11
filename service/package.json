@@ -86,6 +86,7 @@
     "stream-to-buffer": "^0.1.0",
     "svg-captcha": "^1.4.0",
     "swagger-ui-express": "^4.6.2",
+    "tencentcloud-sdk-nodejs-asr": "^4.0.975",
     "tencentcloud-sdk-nodejs-sms": "^4.0.882",
     "typeorm": "^0.3.12",
     "uuid": "^9.0.0",

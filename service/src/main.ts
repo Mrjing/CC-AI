@@ -14,10 +14,12 @@ import { initDatabase } from '@/modules/database/initDatabase';
 import * as compression from 'compression';
 import * as xmlBodyParser from 'express-xml-bodyparser';
 import { resolve } from 'path';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   await initDatabase();
   const app = await NestFactory.create(AppModule);
+  app.use(bodyParser.json({ limit: '10mb' })); // 设置JSON请求体大小限制
   app.use(compression());
   const www = resolve(__dirname, './public');
   app.use(xmlBodyParser());
@@ -29,6 +31,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.getHttpAdapter().getInstance().set('views', 'templates/pages');
   app.getHttpAdapter().getInstance().set('view engine', 'hbs');
+
 
   createSwagger(app);
   const server = await app.listen(PORT, () => {
