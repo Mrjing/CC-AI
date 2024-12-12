@@ -12,11 +12,11 @@ import { getAuthorization } from '@/common/utils';
 @ApiTags('wujie')
 @Controller('wujie')
 export class WujieController {
-  constructor(private readonly wujieService: WujieService) {}
+  constructor(private readonly wujieService: WujieService) { }
 
   @Get('getModelInfo')
   @ApiOperation({ summary: '获取作画模型列表' })
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async getModelInfo() {
     // console.log('***********')
@@ -73,6 +73,10 @@ export class WujieController {
       if (parseInt(code) !== 200) {
         throw new HttpException(code + ' ' + message, 500);
       }
+
+      // 录入 wujie 任务表 
+      const { keys } = data
+
       return data;
     } catch (e) {
       if (e.response.headers) {

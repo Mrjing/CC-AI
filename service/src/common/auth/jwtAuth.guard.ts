@@ -25,6 +25,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // TODO 域名检测
     const domain = request.headers['x-website-domain'];
     const token = this.extractToken(request);
+    console.log('token', token)
     request.user = this.validateToken(token);
     const auth = this.globalConfigService.getNineAiToken();
     await this.redisCacheService.checkTokenAuth(token, request);
@@ -32,6 +33,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   private extractToken(request) {
+    console.log('headers', request.headers)
     if (!request.headers.authorization) {
       if (request.headers.fingerprint) {
         let id = request.headers.fingerprint;
