@@ -27,6 +27,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const token = this.extractToken(request);
     console.log('token', token)
     request.user = this.validateToken(token);
+    console.log('user', request.user)
     const auth = this.globalConfigService.getNineAiToken();
     await this.redisCacheService.checkTokenAuth(token, request);
     return true;

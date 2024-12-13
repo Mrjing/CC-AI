@@ -5,6 +5,7 @@ import { Result } from '@/common/result';
 @Catch()
 export class AllExceptionsFilter<T> implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
+    console.log('exception', exception.initMessage, exception.message, exception.name)
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();
