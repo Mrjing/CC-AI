@@ -4,7 +4,8 @@ import { Type } from 'class-transformer';
 import { BaseEntity } from 'typeorm';
 
 export class QueryDrawTaskDto {
-  @ApiProperty({ example: '', description: '用户ID', required: true })
+  @ApiProperty({ example: 1, description: '用户ID', required: true })
+  @IsOptional()
   userId: number;
 
   @ApiProperty({ example: 1, description: '查询页数', required: false })
