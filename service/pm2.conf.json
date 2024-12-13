@@ -1,6 +1,6 @@
 {
   "apps": {
-    "name": "yiai-v2.5.0",
+    "name": "ccai-v0.1.0",
     "script": "./dist/main.js",
     "watch": true,
     "ignore_watch": [
