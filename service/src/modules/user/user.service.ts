@@ -3,7 +3,7 @@ import { UserStatusEnum, UserStatusErrMsg } from '../../common/constants/user.co
 import { MailerService } from '@nestjs-modules/mailer';
 import { VerifycationEntity } from '../verification/verifycation.entity';
 import { VerificationService } from '../verification/verification.service';
-import { Injectable, HttpException, HttpStatus, Global } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Global, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Connection, UpdateResult, Not, Like, In, MoreThan } from 'typeorm';
 import { UserRegisterDto } from '../auth/dto/authRegister.dto';
