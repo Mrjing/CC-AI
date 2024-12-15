@@ -149,7 +149,7 @@ export class AuthService {
       await this.redisCacheService.saveToken(id, token);
       return token;
     } catch (e) {
-      console.log('createUser error: ', e);
+      console.error('createUser error: ', e);
       throw new HttpException('用户登录异常，请联系管理员处理', 500);
     }
   }
