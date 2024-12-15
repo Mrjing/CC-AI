@@ -51,7 +51,7 @@ export class UserService {
     private readonly globalConfigService: GlobalConfigService,
     @InjectRepository(ConfigEntity)
     private readonly configEntity: Repository<ConfigEntity>,
-  ) { }
+  ) {}
 
   /* create and verify */
   async createUserAndVerifycation(user: UserEntity | UserRegisterDto, req: Request): Promise<UserEntity> {

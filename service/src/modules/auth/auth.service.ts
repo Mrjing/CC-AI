@@ -1,5 +1,5 @@
 import { LoginByPhoneDto } from './dto/loginByPhone.dt';
-import { LoginByPhoneCodeDto } from './dto/loginByPhoneCode.dto'
+import { LoginByPhoneCodeDto } from './dto/loginByPhoneCode.dto';
 import { GlobalConfigService } from '@/modules/globalConfig/globalConfig.service';
 import { VerifycationEntity } from '../verification/verifycation.entity';
 import { VerificationEnum } from '@/common/constants/verification.constant';
@@ -47,7 +47,7 @@ export class AuthService {
     private readonly userBalanceService: UserBalanceService,
     private readonly redisCacheService: RedisCacheService,
     private readonly globalConfigService: GlobalConfigService,
-  ) { }
+  ) {}
 
   async onModuleInit() {
     this.getIp();
@@ -123,30 +123,35 @@ export class AuthService {
     const nameSpace = await this.globalConfigService.getNamespace();
     const key = `${nameSpace}:PHONECODE:${phone}`;
     const redisPhoneCode = await this.redisCacheService.get({ key });
+
     if (!redisPhoneCode) {
       throw new HttpException('验证码已过期、请重新发送！', HttpStatus.BAD_REQUEST);
     }
     if (code !== redisPhoneCode) {
       throw new HttpException('验证码填写错误、请重新输入！', HttpStatus.BAD_REQUEST);
     }
-
-    // 
-    let user: UserEntity = await this.userService.queryUserInfoByPhone(phone);
-    // user 不存在则创建新用户
-    if (!user) {
-      const email = ``;
-      const newUser: any = { username: `游客小C`, phone, email, status: UserStatusEnum.ACTIVE };
-      const userDefautlAvatar = await this.globalConfigService.getConfigs(['userDefautlAvatar']);
-      newUser.avatar = userDefautlAvatar;
-      user = await this.userService.createUser(newUser);
+    try {
+      //
+      let user: UserEntity = await this.userService.queryUserInfoByPhone(phone);
+      // user 不存在则创建新用户
+      if (!user) {
+        const email = ``;
+        const newUser: any = { username: `游客小C`, phone, email, status: UserStatusEnum.ACTIVE };
+        const userDefautlAvatar = await this.globalConfigService.getConfigs(['userDefautlAvatar']);
+        newUser.avatar = userDefautlAvatar;
+        user = await this.userService.createUser(newUser);
+      }
+      console.log('user', user);
+      const { username, id, email, role, openId, client } = user;
+      const ip = getClientIp(req);
+      await this.userService.savaLoginIp(id, ip);
+      const token = await this.jwtService.sign({ username, id, email, role, openId, client, phone });
+      await this.redisCacheService.saveToken(id, token);
+      return token;
+    } catch (e) {
+      console.log('createUser error: ', e);
+      throw new HttpException('用户登录异常，请联系管理员处理', 500);
     }
-    console.log('user', user)
-    const { username, id, email, role, openId, client } = user;
-    const ip = getClientIp(req);
-    await this.userService.savaLoginIp(id, ip);
-    const token = await this.jwtService.sign({ username, id, email, role, openId, client, phone });
-    await this.redisCacheService.saveToken(id, token);
-    return token
   }
 
   async loginByOpenId(user: UserEntity, req: Request): Promise<string> {
@@ -203,8 +208,10 @@ export class AuthService {
       }
       await this.userBalanceService.addBalanceToNewUser(id, inviteUser?.id);
       res.redirect(
-        `/api/auth/registerSuccess?id=${id.toString().padStart(4, '0')}&username=${username}&email=${email}&registerSuccessEmailTitle=${configMap.registerSuccessEmailTitle
-        }&registerSuccessEmailTeamName=${configMap.registerSuccessEmailTeamName}&registerSuccessEmaileAppend=${configMap.registerSuccessEmaileAppend
+        `/api/auth/registerSuccess?id=${id.toString().padStart(4, '0')}&username=${username}&email=${email}&registerSuccessEmailTitle=${
+          configMap.registerSuccessEmailTitle
+        }&registerSuccessEmailTeamName=${configMap.registerSuccessEmailTeamName}&registerSuccessEmaileAppend=${
+          configMap.registerSuccessEmaileAppend
         }`,
       );
     } catch (error) {
@@ -283,6 +290,7 @@ export class AuthService {
       throw new HttpException(`${ttl}秒内不得重复发送短信！`, HttpStatus.BAD_REQUEST);
     }
     const code = createRandomCode();
+    console.log('code', code);
     const messageInfo = { phone, code };
     // await this.verificationService.sendPhoneCode(messageInfo);
     await this.verificationService.sendPhoneCodeWithQcloud(messageInfo);
