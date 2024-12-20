@@ -54,10 +54,9 @@ jobs:
           eval $(ssh-agent -s)
           ssh-add <(echo "${{ secrets.DEPLOY_TOKEN }}")
           ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
-          cd service
-          rsync -avz --delete ./package.json /jkc/test/CC-AI/service
-          rsync -avz --delete ./package-lock.json /jkc/test/CC-AI/service
-          rsync -avz --delete ./pm2.conf.json /jkc/test/CC-AI/service
+          rsync -avz --delete ./service/package.json /jkc/test/CC-AI/service
+          rsync -avz --delete ./service/package-lock.json /jkc/test/CC-AI/service
+          rsync -avz --delete ./service/pm2.conf.json /jkc/test/CC-AI/service
           npm install
           npm run restart
           EOF
