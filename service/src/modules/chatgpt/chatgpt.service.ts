@@ -27,7 +27,7 @@ import { In, Like, MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BadwordsService } from '../badwords/badwords.service';
 import { AutoreplyService } from '../autoreply/autoreply.service';
-import { GptKeysEntity } from './gptkeys.entity';
+import { GptKeysEntity } from './gptKeys.entity';
 import { GlobalConfigService } from '../globalConfig/globalConfig.service';
 import { FanyiService } from '../fanyi/fanyi.service';
 import * as dayjs from 'dayjs';
@@ -83,7 +83,7 @@ export class ChatgptService implements OnModuleInit {
     private readonly fanyiService: FanyiService,
     private readonly chatGroupService: ChatGroupService,
     private readonly modelsService: ModelsService,
-  ) {}
+  ) { }
 
   private api;
   private nineStore: NineStoreInterface = null; // redis存储
@@ -92,9 +92,9 @@ export class ChatgptService implements OnModuleInit {
     list3: Key[];
     list4: Key[];
   } = {
-    list3: [],
-    list4: [],
-  };
+      list3: [],
+      list4: [],
+    };
 
   async onModuleInit() {
     let chatgpt = await importDynamic('chatgpt-ai-web');
@@ -260,7 +260,7 @@ export class ChatgptService implements OnModuleInit {
             userId: req.user.id,
             type: DeductionKey.CHAT_TYPE,
             prompt,
-            imageUrl:imageUrl,
+            imageUrl: imageUrl,
             activeModel,
             answer: '',
             promptTokens: prompt_tokens,
@@ -342,7 +342,7 @@ export class ChatgptService implements OnModuleInit {
               lastChat = chat;
               firstChunk = false;
             },
-          },this.uploadService);
+          }, this.uploadService);
           isSuccess = true;
         }
 
