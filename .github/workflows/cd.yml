@@ -51,7 +51,9 @@ jobs:
       - name: Upload config to Deploy Server
         id: upload-config-to-deploy-server
         run: |
-          ssh root@43.143.18.178 << 'EOF'
+          eval $(ssh-agent -s)
+          ssh-add <(echo "${{ secrets.DEPLOY_TOKEN }}")
+          ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
           cd /jkc/test/CC-AI/service
           rsync -avz --delete ./service/package.json /jkc/test/CC-AI/service
           rsync -avz --delete ./service/package-lock.json /jkc/test/CC-AI/service
