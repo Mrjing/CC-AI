@@ -42,7 +42,10 @@ export class WujieEntity extends BaseEntity {
   @Column({ comment: '作画失败错误信息', nullable: true })
   fail_message: string;
 
-  @Column({ comment: '模型提示词', nullable: false })
+  @Column({ comment: '输入模型提示词(中文)', nullable: true, length: 500 })
+  input_model_prompt: string;
+
+  @Column({ comment: '模型提示词(已翻译)', nullable: false, length: 500 })
   model_prompt: string;
 
   @Column({ comment: '作画的积分消耗', nullable: true })

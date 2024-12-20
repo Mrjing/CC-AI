@@ -14,7 +14,7 @@ import { WujieEntity } from './wujie.entity';
 @ApiTags('wujie')
 @Controller('wujie')
 export class WujieController {
-  constructor(private readonly wujieService: WujieService) {}
+  constructor(private readonly wujieService: WujieService) { }
 
   @Get('getModelInfo')
   @ApiOperation({ summary: '获取作画模型列表' })
@@ -86,6 +86,7 @@ export class WujieController {
         keys.map((item) => ({
           userId: req.user.id,
           key: item,
+          input_model_prompt: params.prompt,
         })),
       );
 
@@ -138,6 +139,7 @@ export class WujieController {
         keys.map((item) => ({
           userId: req.user.id,
           key: item,
+          input_model_prompt: params.prompt,
         })),
       );
       return data;
@@ -393,23 +395,27 @@ export class WujieController {
         const { list = [] } = data;
 
         if (list.length) {
-          newUncompletedTaskInfo = list.map((item) => ({
-            userId: req.user.id,
-            key: item.key,
-            status: item.status,
-            wujie_picture_url: item.picture_url,
-            start_gen_time: item.start_gen_time,
-            complete_time: item.complete_time,
-            complete_percent: item.complete_percent,
-            queue_before_num: item.queue_before_num,
-            involve_yellow: item.involve_yellow,
-            audit_info: item.audit_info,
-            fail_code: item.fail_message ? item.fail_message.fail_code : null,
-            fail_message: item.fail_message ? item.fail_message.fail_message : '',
-            model_prompt: item.model_prompt,
-            integral_cost: item.integral_cost,
-            integral_cost_message: item.integral_cost_message,
-          }));
+          newUncompletedTaskInfo = list.map((item) => {
+            const curUncompletedItem = uncompletedTasks.find(uncompletedItem => item.key === uncompletedItem.key);
+            return {
+              userId: req.user.id,
+              key: item.key,
+              status: item.status,
+              wujie_picture_url: item.picture_url,
+              start_gen_time: item.start_gen_time,
+              complete_time: item.complete_time,
+              complete_percent: item.complete_percent,
+              queue_before_num: item.queue_before_num,
+              involve_yellow: item.involve_yellow,
+              audit_info: item.audit_info,
+              fail_code: item.fail_message ? item.fail_message.fail_code : null,
+              fail_message: item.fail_message ? item.fail_message.fail_message : '',
+              model_prompt: item.model_prompt,
+              input_model_prompt: curUncompletedItem.input_model_prompt || '',
+              integral_cost: item.integral_cost,
+              integral_cost_message: item.integral_cost_message,
+            }
+          });
         }
         // 3. 更新通过wujie api 获取的状态到库表
         const batchUpdateRes = await this.wujieService.batchUpdateDrawTaskInfo(newUncompletedTaskInfo);
