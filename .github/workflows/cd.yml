@@ -58,6 +58,7 @@ jobs:
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./service/pm2.conf.json ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/jkc/test/CC-AI/service/
           ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
           cd /jkc/test/CC-AI/service
+          nvm use 18
           npm install
           npm run restart
           EOF
