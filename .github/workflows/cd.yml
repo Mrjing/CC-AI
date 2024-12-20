@@ -24,6 +24,7 @@ jobs:
           key: ${{ runner.OS }}-service-${{ hashFiles('service/package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: cd servaice && npm install
 
       - name: Build project
