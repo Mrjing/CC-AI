@@ -1,0 +1,65 @@
+name: CD
+on:
+  push:
+    branches: main
+
+jobs:
+  CD:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.20.4"
+
+      - name: use service directory
+        run: cd service
+
+      - name: Cache
+        id: cache-dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.OS }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      # 把制品上传到部署机器
+      - name: Upload to Deploy Server
+        id: upload-to-deploy-server
+        uses: easingthemes/ssh-deploy@v2.0.7
+        env:
+          # SSH_PRIVATE_KEY为准备工作步骤三中生成密钥对里的私钥
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_TOKEN }}
+          # 指定当前目录中要上传的内容
+          SOURCE: "dist/"
+          # 指定上传到部署机器的哪个目录下
+          TARGET: "/jkc/test/CC-AI/service/dist"
+          # 上传前指令，此处用于清空TARGET下的文件
+          ARGS: "-avzr --delete"
+          # REMOTE_HOST为机器的公网IP
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          # REMOTE_USER为登录机器时用到账号名
+          REMOTE_USER: ${{secrets.REMOTE_USER}}
+      # 把package.json, package-lock.json, pm2.conf.json 上传到目标目录    
+      - name: Upload config to Deploy Server
+        id: upload-config-to-deploy-server
+        run: |
+          ssh root@43.143.18.178 << 'EOF'
+          cd /jkc/test/CC-AI/service
+          rsync -avz --delete ./package.json /jkc/test/CC-AI/service
+          rsync -avz --delete ./package-lock.json /jkc/test/CC-AI/service
+          rsync -avz --delete ./pm2.conf.json /jkc/test/CC-AI/service
+          npm install
+          npm run restart
+          EOF
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_TOKEN }}

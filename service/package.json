@@ -8,6 +8,7 @@
   "bin": "./dist/main.js",
   "scripts": {
     "start": "pm2 start pm2.conf.json",
+    "restart": "pm2 restart pm2.conf.json",
     "build": "nest build && npm run encrypt ",
     "build:test": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
