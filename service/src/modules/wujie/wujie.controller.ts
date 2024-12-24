@@ -126,7 +126,7 @@ export class WujieController {
         status,
         headers,
       } = await axios(config);
-      console.log('createWithMJ data', data, code, message, headers);
+      console.log('createWithMJ data', config, data, code, message, headers);
       // 业务状态错误码
       if (parseInt(code) !== 200) {
         throw new HttpException(code + ' ' + message, 500);

@@ -13,11 +13,14 @@ import { ResetUserPassDto } from './dto/resetUserPass.dto';
 import { SuperAuthGuard } from '@/common/auth/superAuth.guard';
 import { queryInviteRecordDto } from './dto/queryInviteRecord.dto';
 import { RetrieveUserDto } from './dto/retrieve.dto';
+import { CreateUserDto } from './dto/createUser.dto';
+import * as bcrypt from 'bcryptjs';
+import { UserStatusEnum, UserStatusErrMsg } from '@/common/constants/user.constant';
 
 @Controller('user')
 @ApiTags('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post('update')
   @ApiOperation({ summary: '更新用户信息' })
@@ -83,9 +86,25 @@ export class UserController {
 
   @Post('resetUserPass')
   @ApiOperation({ summary: '重置用户密码' })
-  @UseGuards(SuperAuthGuard)
+  @UseGuards(AdminAuthGuard)
   @ApiBearerAuth()
   async resetUserPass(@Body() body: ResetUserPassDto) {
     return await this.userService.resetUserPass(body);
+  }
+
+  @Post('createUserAccount')
+  @ApiOperation({ summary: '创建用户账号' })
+  @UseGuards(AdminAuthGuard)
+  @ApiBearerAuth()
+  async createUserAccount(@Body() body: CreateUserDto) {
+    const { password } = body
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const newUserData = {
+      ...body,
+      password: hashedPassword,
+      rawPassword: password,
+      status: UserStatusEnum.ACTIVE
+    }
+    return await this.userService.createUser(newUserData)
   }
 }
