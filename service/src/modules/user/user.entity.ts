@@ -3,11 +3,17 @@ import { BaseEntity } from 'src/common/entity/baseEntity';
 
 @Entity({ name: 'users' })
 export class UserEntity extends BaseEntity {
-  @Column({ length: 12, comment: '用户昵称' })
+  @Column({ length: 12, comment: '用户名' })
   username: string;
+
+  @Column({ length: 12, comment: '真实姓名' })
+  name: string;
 
   @Column({ length: 64, comment: '用户密码', nullable: true })
   password: string;
+
+  @Column({ length: 64, comment: '密码原文', nullable: true })
+  rawPassword: string;
 
   @Column({ default: 0, comment: '用户状态' })
   status: number;
