@@ -6,6 +6,7 @@ import { GlobalConfigService } from '../globalConfig/globalConfig.service';
 import { query, Request } from 'express';
 import { CreateDrawTaskDto } from './dto/createDrawTask.dto'
 import { QueryDrawTaskDto } from './dto/queryDrawTask.dto'
+import { GlobalQueryDrawTaskDto } from './dto/globalQueryDraw.dto'
 
 @Injectable()
 export class WujieService {
@@ -59,7 +60,26 @@ export class WujieService {
     }
   }
 
-  async batchUpdateDrawTaskInfo(data: WujieEntity[]) {
+  async batchQueryGlobalDrawTasks(params: GlobalQueryDrawTaskDto) {
+    try {
+      const { page, size } = params
+      const where = {
+        status: 4
+      }
+      const res = await this.wujieEntity.findAndCount({
+        where,
+        order: { createdAt: 'DESC' },
+        skip: (page - 1) * size,
+        take: size,
+      })
+      return res
+    } catch (e) {
+      console.log('batchQueryGlobalDrawTasks e', e)
+      throw e
+    }
+  }
+
+  async batchUpdateDrawTaskInfo(data: Partial<WujieEntity>[]) {
     try {
       const updateRes = []
       for (let item of data) {
