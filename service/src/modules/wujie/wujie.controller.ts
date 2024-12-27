@@ -1,5 +1,6 @@
 import { SuperAuthGuard } from '@/common/auth/superAuth.guard';
 import { WujieService } from './wujie.service';
+import { UploadService } from '../upload/upload.service';
 import { JwtAuthGuard } from '@/common/auth/jwtAuth.guard';
 import { Body, Controller, Get, Post, Query, Req, Res, UseGuards, HttpException } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -7,6 +8,7 @@ import axios from 'axios';
 import { Request, Response } from 'express';
 import { GetDrawListDto } from './dto/getDrawList.dto';
 import { QueryDrawTaskDto } from './dto/queryDrawTask.dto';
+import { GlobalQueryDrawTaskDto } from './dto/globalQueryDraw.dto'
 import { AdminAuthGuard } from '@/common/auth/adminAuth.guard';
 import { getAuthorization } from '@/common/utils';
 import { WujieEntity } from './wujie.entity';
@@ -14,7 +16,7 @@ import { WujieEntity } from './wujie.entity';
 @ApiTags('wujie')
 @Controller('wujie')
 export class WujieController {
-  constructor(private readonly wujieService: WujieService) { }
+  constructor(private readonly wujieService: WujieService, private readonly uploadService: UploadService) { }
 
   @Get('getModelInfo')
   @ApiOperation({ summary: '获取作画模型列表' })
@@ -269,6 +271,34 @@ export class WujieController {
     }
   }
 
+  @ApiOperation({ summary: '获取全局已完成作画数据' })
+  @Post('batchGetGlobalFinishedDrawInfo')
+  async batchGetGlobalFinishedDrawInfo(@Body() body: GlobalQueryDrawTaskDto, @Req() req: Request) {
+    // 1. 先查询全局完成的绘画，按时间倒排
+    const [taskList, total] = await this.wujieService.batchQueryGlobalDrawTasks({
+      page: body.page,
+      size: body.size,
+    });
+
+    // 4. 合并返回结果
+    return {
+      list: taskList,
+      total,
+    };
+  } catch(e) {
+    console.log('e', e);
+    if (e.response) {
+      console.log('error.response.data', e.response.data);
+      console.log('error.config.headers', e.config.headers);
+      console.log('error.response.status', e.response.status);
+      console.log('error.response.statusText', e.response.statusText);
+      console.log('error.response.headers', e.response.headers);
+      throw new HttpException({ desc: '获取全局已完成作画数据' + e.response.data.message, code: e.response.data.code }, e.response.status);
+    }
+
+    throw new HttpException({ desc: e.message }, 500);
+  }
+
   @ApiOperation({ summary: '批量获取单用户作画任务信息' })
   @Post('batchGetDrawTaskInfoByUser')
   @UseGuards(JwtAuthGuard)
@@ -420,9 +450,34 @@ export class WujieController {
         // 3. 更新通过wujie api 获取的状态到库表
         const batchUpdateRes = await this.wujieService.batchUpdateDrawTaskInfo(newUncompletedTaskInfo);
         // console.log('batchUpdateRes', batchUpdateRes)
+        // 4. 判断刚查的这一批中是否有已完成（已拿到 wujie_picture_url的，异步去换取腾讯云url并更新到库)
+        const newFinishedTasks = newUncompletedTaskInfo.filter(item => item.status === 4 && item.wujie_picture_url)
+        if (newFinishedTasks.length) {
+          Promise.all(newFinishedTasks.map(async (item) => {
+            const curWujiePictureUrl = item.wujie_picture_url
+            const curPictureName = curWujiePictureUrl.split('/').pop()
+            const res = await this.uploadService.uploadFileFromUrl({ filename: curPictureName, url: curWujiePictureUrl })
+            console.log('single upload res', res)
+            return res
+          })).then(res => {
+            console.log('batch upload res', res)
+            if (res.length) {
+              const updateData = res.map((item, index) => {
+                return {
+                  key: newFinishedTasks[index].key,
+                  qcloud_cos_url: item
+                }
+              })
+              console.log('updateData', updateData)
+              return this.wujieService.batchUpdateDrawTaskInfo(updateData)
+            }
+          }).catch(e => {
+            console.log('batch upload error', e)
+          })
+        }
       }
 
-      // 4. 合并返回结果
+      // 5. 合并返回结果
       return {
         list: completedTasks.concat(newUncompletedTaskInfo),
       };
@@ -443,7 +498,7 @@ export class WujieController {
 
   @ApiOperation({ summary: '批量获取作画任务信息' })
   @Post('batchGetDrawTaskInfo')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async batchGetDrawTaskInfo(@Body() keys: string[], @Req() req: Request) {
     const authorization = getAuthorization();
