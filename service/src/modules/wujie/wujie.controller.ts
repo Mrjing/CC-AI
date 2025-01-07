@@ -386,6 +386,37 @@ export class WujieController {
     }
   }
 
+  @ApiOperation({ summary: '迁移无界图片url API' })
+  @Post('migrateWujieImageUrlToQcloudCosUrl')
+  async migrateWujieImageUrlToQcloudCosUrl() {
+    // 查询有wujie_picture_url但没有qcloud_cos_url的数据
+    const res = await this.wujieService.batchQueryToTransformTasks();
+    console.log('migrateWujieImageUrlToQcloudCosUrl res', res);
+    const toTransformTotal = res.length
+    let finishedTransformTotal = 0
+    // 串行更新
+    for (let item of res) {
+      const curWujiePictureUrl = item.wujie_picture_url
+      const curPictureName = curWujiePictureUrl.split('/').pop()
+      const uploadRes = await this.uploadService.uploadFileFromUrl({ filename: curPictureName, url: curWujiePictureUrl })
+      console.log('single upload res', uploadRes)
+      if (uploadRes) {
+        const updateData = {
+          key: item.key,
+          qcloud_cos_url: uploadRes
+        }
+        const updateRes = await this.wujieService.batchUpdateDrawTaskInfo([updateData])
+        console.log('updateRes', updateRes)
+        finishedTransformTotal++
+      }
+    }
+    console.log('迁移结果', finishedTransformTotal + '/' + toTransformTotal)
+    return {
+      toTransformTotal,
+      finishedTransformTotal
+    }
+  }
+
   @ApiOperation({ summary: '批量获取指定key作画任务信息' })
   @Post('batchGetDrawTaskInfoByKeys')
   @UseGuards(JwtAuthGuard)

@@ -277,11 +277,12 @@ export class UploadService implements OnModuleInit {
   /* 将MJ图片地址转为buffer */
   async getBufferFromUrl(url) {
     const proxyMj = (await this.globalConfigService.getConfigs(['mjProxy'])) || 0;
-    const response = await axios.get(url, { responseType: 'stream' });
+    const response = await axios.get(url, { responseType: 'stream', timeout: 20000 });
     return new Promise((resolve, reject) => {
       streamToBuffer(response.data, (err, buffer) => {
         if (err) {
-          throw new HttpException('获取图片资源失败、请重新试试吧！', HttpStatus.BAD_REQUEST);
+          console.log('streamToBuffer err', err)
+          reject(new HttpException('获取图片资源失败、请重新试试吧！', HttpStatus.BAD_REQUEST));
         } else {
           resolve(buffer);
         }
