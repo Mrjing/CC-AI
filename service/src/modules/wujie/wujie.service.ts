@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger, Req } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { WujieEntity } from './wujie.entity'
-import { In, Repository } from 'typeorm';
+import { In, Repository, IsNull, Not } from 'typeorm';
 import { GlobalConfigService } from '../globalConfig/globalConfig.service';
 import { query, Request } from 'express';
 import { CreateDrawTaskDto } from './dto/createDrawTask.dto'
@@ -56,6 +56,22 @@ export class WujieService {
       return res
     } catch (e) {
       console.log('batchQueryDrawTasksByKeys e', e)
+      throw e
+    }
+  }
+
+  async batchQueryToTransformTasks() {
+    try {
+      const res = await this.wujieEntity.find({
+        where: {
+          status: 4,
+          wujie_picture_url: Not(IsNull()),
+          qcloud_cos_url: IsNull(),
+        }
+      })
+      return res
+    } catch (e) {
+      console.log('batchQueryToTransformTasks e', e)
       throw e
     }
   }
