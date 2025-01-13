@@ -58,7 +58,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
           cd /jkc/test/CC-AI/service
           nvm use 18
-          npm config set registry https://registry.npmmirror.com
           npm i -g pm2
           npm install
           npm run restart
