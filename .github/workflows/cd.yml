@@ -57,16 +57,15 @@ jobs:
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./service/package-lock.json ${{ secrets.MAIN_REMOTE_USER }}@${{ secrets.MAIN_REMOTE_HOST }}:/home/ubuntu/jkc/ai/CC-AI/service/
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./service/pm2.conf.json ${{ secrets.MAIN_REMOTE_USER }}@${{ secrets.MAIN_REMOTE_HOST }}:/home/ubuntu/jkc/ai/CC-AI/service/
           ssh -o StrictHostKeyChecking=no ${{ secrets.MAIN_REMOTE_USER }}@${{ secrets.MAIN_REMOTE_HOST }} << 'EOF'
-          bash -c "
           export NVM_DIR="$HOME/.nvm" 
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
           cd /home/ubuntu/jkc/ai/CC-AI/service
           nvm use 18
+          npm config set registry http://mirrors.cloud.tencent.com/npm/
           npm i -g pm2
           npm install
           npm run restart
-          "
           EOF
         env:
           SSH_PRIVATE_KEY: ${{ secrets.MAIN_DEPLOY_TOKEN }}
