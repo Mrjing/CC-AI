@@ -6,6 +6,9 @@ import axios from 'axios';
 import fs from 'fs';
 import { OrderEntity } from '../order/order.entity';
 import { CramiPackageEntity } from '../crami/cramiPackage.entity';
+import { GoodsOrderEntity } from '../goodsOrder/goodsOrder.entity';
+import { GoodsOrderItemEntity } from '../goodsOrderItem/goodsOrderItem.entity';
+import { GoodsEntity } from '../goods/goods.entity';
 import { UserBalanceService } from '../userBalance/userBalance.service';
 import { GlobalConfigService } from '../globalConfig/globalConfig.service';
 import { createRandomNonceStr, importDynamic } from '@/common/utils';
@@ -18,10 +21,16 @@ export class PayService {
     private readonly cramiPackageEntity: Repository<CramiPackageEntity>,
     @InjectRepository(OrderEntity)
     private readonly orderEntity: Repository<OrderEntity>,
+    @InjectRepository(GoodsEntity)
+    private readonly goodsEntity: Repository<GoodsEntity>,
+    @InjectRepository(GoodsOrderEntity)
+    private readonly goodsOrderEntity: Repository<GoodsOrderEntity>,
+    @InjectRepository(GoodsOrderItemEntity)
+    private readonly goodsOrderItemEntity: Repository<GoodsOrderItemEntity>,
     private readonly userBalanceService: UserBalanceService,
     private readonly globalConfigService: GlobalConfigService,
     private readonly userService: UserService,
-  ) { }
+  ) {}
 
   private WxPay;
 
@@ -45,17 +54,28 @@ export class PayService {
   }
 
   /* 分平台支付请求 */
-  async pay(userId: number, orderId: string, payType = 'wxpay') {
-    // query order
-    const order = await this.orderEntity.findOne({ where: { userId, orderId } });
-    if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
-    // query goods
-    const goods = await this.cramiPackageEntity.findOne({ where: { id: order.goodsId } });
-    if (!goods) throw new HttpException('套餐不存在!', HttpStatus.BAD_REQUEST);
+  async pay(userId: number, orderId: string, payType = 'wxpay', isGoodsOrder = false) {
+    let order;
+    if (!isGoodsOrder) {
+      // query order
+      order = await this.orderEntity.findOne({ where: { userId, orderId } });
+      if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
+      // query goods
+      const goods = await this.cramiPackageEntity.findOne({ where: { id: order.goodsId } });
+      if (!goods) throw new HttpException('套餐不存在!', HttpStatus.BAD_REQUEST);
+    } else {
+      // query order
+      order = await this.goodsOrderEntity.findOne({ where: { userId, orderNo: orderId } });
+      if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
+      // query goods
+      const goods = await this.goodsOrderItemEntity.findOne({ where: { order: { orderNo: orderId } } });
+      if (!goods) throw new HttpException('商品不存在!', HttpStatus.BAD_REQUEST);
+    }
+
     console.log('本次支付类型: ', order.payPlatform);
     try {
       if (order.payPlatform == 'wechat') {
-        return this.payWeChat(userId, orderId, payType);
+        return this.payWeChat(userId, orderId, payType, isGoodsOrder);
       }
       if (order.payPlatform == 'epay') {
         return this.payEpay(userId, orderId, payType);
@@ -105,7 +125,7 @@ export class PayService {
       'payHupiSecret',
       'payHupiNotifyUrl',
       'payHupiReturnUrl',
-      'payHupiGatewayUrl'
+      'payHupiGatewayUrl',
     ]);
     const params = {};
     params['version'] = '1.1';
@@ -324,15 +344,39 @@ export class PayService {
       if (params['event_type'] == 'TRANSACTION.SUCCESS') {
         const { ciphertext, associated_data, nonce } = params['resource'];
         const resource = pay.decipher_gcm(ciphertext, associated_data, nonce, payWeChatSecret);
-        const order = await this.orderEntity.findOne({ where: { orderId: resource['out_trade_no'], status: 0 } });
-        if (!order) return 'failed';
-        // update order status
-        const status = resource['trade_state'] == 'SUCCESS' ? 1 : 2;
-        const result = await this.orderEntity.update({ orderId: resource['out_trade_no'] }, { status, paydAt: new Date() });
-        if (status === 1) {
-          await this.userBalanceService.addBalanceToOrder(order);
+        // 区分是套餐订单，还是实物订单
+        let isGoodsOrder = false;
+        try {
+          const { attach } = resource;
+          ({ isGoodsOrder } = JSON.parse(attach));
+        } catch (e) {
+          console.log('parse attach failed', e);
         }
-        if (result.affected != 1) return 'failed';
+
+        // 虚拟套餐订单
+        if (!isGoodsOrder) {
+          const order = await this.orderEntity.findOne({ where: { orderId: resource['out_trade_no'], status: 0 } });
+          if (!order) return 'failed';
+          // update order status
+          const status = resource['trade_state'] == 'SUCCESS' ? 1 : 2;
+          const result = await this.orderEntity.update({ orderId: resource['out_trade_no'] }, { status, paydAt: new Date() });
+          if (status === 1) {
+            await this.userBalanceService.addBalanceToOrder(order);
+          }
+          if (result.affected != 1) return 'failed';
+        } else {
+          // 实物订单
+          const order = await this.goodsOrderEntity.findOne({ where: { orderNo: resource['out_trade_no'], payStatus: 0 } });
+          if (!order) return 'failed';
+          // update order status
+          const status = resource['trade_state'] == 'SUCCESS' ? 1 : 2;
+          const result = await this.goodsOrderEntity.update({ orderNo: resource['out_trade_no'] }, { payStatus: status, paidAt: new Date() });
+          if (status === 1) {
+            // 扭转订单状态为待发货
+            await this.goodsOrderEntity.update({ orderNo: resource['out_trade_no'] }, { status: 1 });
+          }
+          if (result.affected !== 1) return 'failed';
+        }
       }
       return 'success';
     } catch (error) {
@@ -343,12 +387,24 @@ export class PayService {
   }
 
   /* 微信支付支付 */
-  async payWeChat(userId: number, orderId: string, payType = 'native') {
+  async payWeChat(userId: number, orderId: string, payType = 'native', isGoodsOrder: boolean = false) {
     console.log('payType: ', payType);
-    const order = await this.orderEntity.findOne({ where: { userId, orderId } });
-    if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
-    const goods = await this.cramiPackageEntity.findOne({ where: { id: order.goodsId } });
-    if (!goods) throw new HttpException('套餐不存在!', HttpStatus.BAD_REQUEST);
+    let order, goods;
+    if (!isGoodsOrder) {
+      // 判断是否为套餐订单 or 实物订单
+      order = await this.orderEntity.findOne({ where: { userId, orderId } });
+      if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
+      goods = await this.cramiPackageEntity.findOne({ where: { id: order.goodsId } });
+      if (!goods) throw new HttpException('套餐不存在!', HttpStatus.BAD_REQUEST);
+    } else {
+      // query order
+      order = await this.goodsOrderEntity.findOne({ where: { userId, orderNo: orderId } });
+      if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
+      // query goods
+      goods = await this.goodsOrderItemEntity.findOne({ where: { order: { orderNo: orderId } } });
+      if (!goods) throw new HttpException('商品不存在!', HttpStatus.BAD_REQUEST);
+    }
+
     const { payWeChatAppId, payWeChatMchId, payWeChatPublicKey, payWeChatPrivateKey, payWeChatNotifyUrl, payWeChatH5Name, payWeChatH5Url } =
       await this.globalConfigService.getConfigs([
         'payWeChatAppId',
@@ -359,17 +415,17 @@ export class PayService {
         'payWeChatH5Name',
         'payWeChatH5Url',
       ]);
-    console.log('payWeChatAppId', payWeChatAppId)
-    console.log('payWeChatMchId', payWeChatMchId)
-    console.log('payWeChatPublicKey', payWeChatPublicKey)
-    console.log('payWeChatPrivateKey', payWeChatPrivateKey)
+    console.log('payWeChatAppId', payWeChatAppId);
+    console.log('payWeChatMchId', payWeChatMchId);
+    console.log('payWeChatPublicKey', payWeChatPublicKey);
+    console.log('payWeChatPrivateKey', payWeChatPrivateKey);
 
     const pay = new this.WxPay({
       appid: payWeChatAppId,
       mchid: payWeChatMchId,
       publicKey: payWeChatPublicKey,
       privateKey: payWeChatPrivateKey,
-      serial_no: process.env.SERIAL_NO
+      serial_no: process.env.SERIAL_NO,
     });
     const params: any = {
       appid: payWeChatAppId,
@@ -389,6 +445,10 @@ export class PayService {
         //   app_url: payWeChatH5Url,
         // },
       },
+      attach: JSON.stringify({
+        // 用户自定义数据包
+        isGoodsOrder,
+      }),
     };
     console.log('wechat-pay: ', params);
 
@@ -434,7 +494,7 @@ export class PayService {
         throw new HttpException('获取支付二维码失败', res);
       }
 
-      const { code_url: url_qrcode } = data
+      const { code_url: url_qrcode } = data;
 
       if (!url_qrcode) {
         console.log('wx-native 获取二维码地址为空', res);
