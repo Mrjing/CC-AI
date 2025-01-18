@@ -27,8 +27,8 @@ import { OfficialModule } from './modules/official/official.module';
 import { TaskModule } from './modules/task/task.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { MidjourneyModule } from './modules/midjourney/midjourney.module';
-import { WujieModule } from './modules/wujie/wujie.module'
-import { AsrModule } from './modules/asr/asr.module'
+import { WujieModule } from './modules/wujie/wujie.module';
+import { AsrModule } from './modules/asr/asr.module';
 import { ChatGroupModule } from './modules/chatGroup/chatGroup.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import * as fetch from 'isomorphic-fetch';
@@ -39,6 +39,14 @@ import { SalesModule } from './modules/sales/sales.module';
 import { SigninModule } from './modules/signin/signin.module';
 import { MenuModule } from './modules/menu/menu.module';
 import { ModelsModule } from './modules/models/models.module';
+import { ActivityModule } from './modules/activity/activity.module';
+import { ActivityConfigModule } from './modules/activityConfig/activityConfig.module';
+import { DictDataModule } from './modules/dictData/dictData.module';
+import { DictTypeModule } from './modules/dictType/dictType.module';
+import { GoodsModule } from './modules/goods/goods.module';
+import { GoodsOrderModule } from './modules/goodsOrder/goodsOrder.module';
+import { GoodsOrderItemModule } from './modules/goodsOrderItem/goodsOrderItem.module';
+import { StudyResourceModule } from './modules/studyResource/studyResource.module';
 
 @Global()
 @Module({
@@ -79,6 +87,14 @@ import { ModelsModule } from './modules/models/models.module';
     SigninModule,
     MenuModule,
     ModelsModule,
+    ActivityModule,
+    ActivityConfigModule,
+    DictDataModule,
+    DictTypeModule,
+    GoodsModule,
+    GoodsOrderModule,
+    GoodsOrderItemModule,
+    StudyResourceModule,
   ],
   providers: [
     {
@@ -87,4 +103,4 @@ import { ModelsModule } from './modules/models/models.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
