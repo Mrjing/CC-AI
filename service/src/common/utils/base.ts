@@ -22,3 +22,16 @@ export function decrypt(text: string): string {
     process.exit(1);
   }
 }
+
+export function flatMapByKey<T>(arr: T[], key: keyof T) {
+  const result = {} as Record<string, T[]>;
+  for (const item of arr) {
+    const value = item[key] as string;
+    if (result[value]) {
+      result[value].push(item);
+    } else {
+      result[value] = [item];
+    }
+  }
+  return result;
+}
