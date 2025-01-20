@@ -30,7 +30,7 @@ export class PayService {
     private readonly userBalanceService: UserBalanceService,
     private readonly globalConfigService: GlobalConfigService,
     private readonly userService: UserService,
-  ) {}
+  ) { }
 
   private WxPay;
 
@@ -68,7 +68,11 @@ export class PayService {
       order = await this.goodsOrderEntity.findOne({ where: { userId, orderNo: orderId } });
       if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
       // query goods
-      const goods = await this.goodsOrderItemEntity.findOne({ where: { order: { orderNo: orderId } } });
+      const goodsOrderItem = await this.goodsOrderItemEntity.findOne({ where: { order: { orderNo: orderId } }, relations: ['order', 'goods'] });
+      console.log('goodsOrderItem', goodsOrderItem)
+      if (!goodsOrderItem) throw new HttpException('商品订单项不存在!', HttpStatus.BAD_REQUEST);
+      const goodsId = goodsOrderItem.goods.id;
+      const goods = await this.goodsEntity.findOne({ where: { id: goodsId } });
       if (!goods) throw new HttpException('商品不存在!', HttpStatus.BAD_REQUEST);
     }
 
@@ -401,7 +405,10 @@ export class PayService {
       order = await this.goodsOrderEntity.findOne({ where: { userId, orderNo: orderId } });
       if (!order) throw new HttpException('订单不存在!', HttpStatus.BAD_REQUEST);
       // query goods
-      goods = await this.goodsOrderItemEntity.findOne({ where: { order: { orderNo: orderId } } });
+      const goodsOrderItem = await this.goodsOrderItemEntity.findOne({ where: { order: { orderNo: orderId } }, relations: ['order', 'goods'] });
+      if (!goodsOrderItem) throw new HttpException('商品订单项不存在!', HttpStatus.BAD_REQUEST);
+      const goodsId = goodsOrderItem.goods.id;
+      goods = await this.goodsEntity.findOne({ where: { id: goodsId } });
       if (!goods) throw new HttpException('商品不存在!', HttpStatus.BAD_REQUEST);
     }
 

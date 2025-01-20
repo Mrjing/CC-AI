@@ -10,12 +10,12 @@ import { QueryGoodsOrderDto } from './dto/queryGoodsOrder.dto';
 
 @Injectable()
 export class GoodsOrderService {
-  constructor(@InjectRepository(GoodsOrderEntity) private readonly goodsOrderEntity: Repository<GoodsOrderEntity>) {}
+  constructor(@InjectRepository(GoodsOrderEntity) private readonly goodsOrderEntity: Repository<GoodsOrderEntity>) { }
 
   async createGoodsOrder(data: CreateGoodsOrderDto) {
     try {
-      // TODO: 创建订单及订单项
-      const res = await this.goodsOrderEntity.createQueryBuilder().insert().into(GoodsOrderEntity).values(data).execute();
+      const goodsOrderEntity = await this.goodsOrderEntity.create(data)
+      const res = await this.goodsOrderEntity.save(goodsOrderEntity);
       return res;
     } catch (e) {
       console.log('createGoodsOrder e', e);

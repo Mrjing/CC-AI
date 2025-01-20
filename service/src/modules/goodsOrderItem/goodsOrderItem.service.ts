@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger, Req } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GoodsEntity } from '../goods/goods.entity'
 import { GoodsOrderItemEntity } from './goodsOrderItem.entity';
+import { GoodsOrderEntity } from '../goodsOrder/goodsOrder.entity'
 import { In, Repository, IsNull, Not } from 'typeorm';
 import { GlobalConfigService } from '../globalConfig/globalConfig.service';
 import { query, Request } from 'express';
@@ -9,11 +11,44 @@ import { QueryGoodsOrderItemDto } from './dto/queryGoodsOrderItem.dto';
 
 @Injectable()
 export class GoodsOrderItemService {
-  constructor(@InjectRepository(GoodsOrderItemEntity) private readonly goodsOrderItemEntity: Repository<GoodsOrderItemEntity>) {}
+  constructor(
+    @InjectRepository(GoodsOrderItemEntity)
+    private readonly goodsOrderItemEntity: Repository<GoodsOrderItemEntity>,
+    @InjectRepository(GoodsOrderEntity)
+    private readonly goodsOrderEntity: Repository<GoodsOrderEntity>,
+    @InjectRepository(GoodsEntity)
+    private readonly goodsEntity: Repository<GoodsEntity>,
+  ) { }
 
   async createGoodsOrderItem(data: CreateGoodsOrderItemDto) {
     try {
-      const res = await this.goodsOrderItemEntity.createQueryBuilder().insert().into(GoodsOrderItemEntity).values(data).execute();
+      const {
+        orderNo,
+        goodsId,
+        goodsName,
+        goodsCoverImg,
+        sellingPrice,
+        goodsCount } = data
+      // 查找对应的 GoodsEntity实体
+      const goods = await this.goodsEntity.findOne({ where: { id: data.goodsId } });
+      if (!goods) {
+        throw new Error('Goods not found');
+      }
+      // 查找对应的 GoodsOrderEntity 实体
+      const order = await this.goodsOrderEntity.findOne({ where: { orderNo: data.orderNo } });
+      if (!order) {
+        throw new Error('Order not found');
+      }
+      const goodsOrderItem = await this.goodsOrderItemEntity.create({
+        goodsName,
+        goodsCoverImg,
+        sellingPrice,
+        goodsCount,
+        goods,
+        order
+      });
+      // 保存 GoodsOrderItemEntity 实体
+      const res = await this.goodsOrderItemEntity.save(goodsOrderItem);
       return res;
     } catch (e) {
       console.log('createGoodsOrderItem e', e);

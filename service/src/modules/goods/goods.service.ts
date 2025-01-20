@@ -14,6 +14,7 @@ export class GoodsService {
 
   async createGoods(data: CreateGoodsDto) {
     try {
+      console.log('CreateGoodsDto data', data)
       const res = await this.goodsEntity
         .createQueryBuilder()
         .insert()
@@ -84,13 +85,13 @@ export class GoodsService {
     }
   }
 
-  // async queryGoodsById(id: number) {
-  //   try {
-  //     const res = await this.goodsEntity.findOne(id)
-  //     return res
-  //   } catch (e) {
-  //     console.log('queryGoodsById e', e)
-  //     throw e
-  //   }
-  // }
+  async queryGoodsById(id: number) {
+    try {
+      const res = await this.goodsEntity.findOne({ where: { id } })
+      return res
+    } catch (e) {
+      console.log('queryGoodsById e', e)
+      throw e
+    }
+  }
 }
