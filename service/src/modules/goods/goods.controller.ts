@@ -17,7 +17,8 @@ export class GoodsController {
 
   @ApiOperation({ summary: '创建商品' })
   @Post('createGoods')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminAuthGuard)
+  @ApiBearerAuth()
   async createGoods(@Body() data: GoodsEntity) {
     try {
       const res = await this.goodsService.createGoods(data)
@@ -30,7 +31,7 @@ export class GoodsController {
 
   @ApiOperation({ summary: '更新商品' })
   @Post('updateGoods')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminAuthGuard)
   async updateGoods(@Body() data: GoodsEntity) {
     try {
       const res = await this.goodsService.updateGoods(data)
@@ -43,7 +44,7 @@ export class GoodsController {
 
   @ApiOperation({ summary: '删除商品' })
   @Post('deleteGoods')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminAuthGuard)
   async deleteGoods(@Query('id') id: number) {
     try {
       const res = await this.goodsService.deleteGoods(id)

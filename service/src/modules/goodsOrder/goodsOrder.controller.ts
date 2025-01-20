@@ -24,7 +24,7 @@ export class GoodsOrderController {
     private readonly goodsService: GoodsService,
     private readonly uploadService: UploadService,
     private readonly payService: PayService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: '创建订单' })
   @Post('createGoodsOrder')
@@ -37,13 +37,13 @@ export class GoodsOrderController {
       // 生成订单号
       const orderNo = createOrderId();
       // 查询商品信息
-      const [goods] = await this.goodsService.queryGoods({ id: goodsId });
+      const goods = await this.goodsService.queryGoodsById(goodsId);
 
-      if (goods.length === 0) {
+      if (!goods) {
         throw new HttpException('商品不存在', 500);
       }
 
-      const { sellingPrice, id } = goods[0];
+      const { sellingPrice, id } = goods;
       // 计算订单总价
       const total = sellingPrice * goodsCount;
       const createGoodsOrderRes = await this.goodsOrderService.createGoodsOrder({
@@ -63,7 +63,7 @@ export class GoodsOrderController {
       const createsGoodsOrderItemRes = await this.goodsOrderItemService.createGoodsOrderItem({
         orderNo,
         goodsId,
-        goodsName: goods[0].name,
+        goodsName: goods.name,
         goodsCoverImg,
         sellingPrice,
         goodsCount,

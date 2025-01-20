@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, OneToOne, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from 'src/common/entity/baseEntity';
 import { GoodsOrderEntity } from '../goodsOrder/goodsOrder.entity';
 import { GoodsEntity } from '../goods/goods.entity';
@@ -9,8 +9,8 @@ export class GoodsOrderItemEntity extends BaseEntity {
   @JoinColumn({ name: 'orderNo', referencedColumnName: 'orderNo' })
   order: GoodsOrderEntity;
 
-  @OneToOne(() => GoodsEntity)
-  @JoinColumn()
+  @ManyToOne(() => GoodsEntity)
+  @JoinColumn({ name: 'goodsId', referencedColumnName: 'id' })
   goods: GoodsEntity;
 
   @Column({ comment: '快照-下单时商品名称', nullable: false, default: '', length: 32 })
