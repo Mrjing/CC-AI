@@ -298,6 +298,20 @@ export class GoodsOrderController {
     }
   }
 
+  @ApiOperation({ summary: '根据订单号查询订单详情' })
+  @Get('queryGoodsOrderByNo')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async queryGoodsOrderByNo(@Query('orderNo') orderNo: string) {
+    try {
+      const res = await this.goodsOrderService.queryGoodsOrderByNo(orderNo);
+      return res;
+    } catch (e) {
+      console.log('queryGoodsOrderByNo e', e);
+      throw e;
+    }
+  }
+
   @ApiOperation({ summary: '查询订单项' })
   @Get('queryGoodsOrderItem')
   @UseGuards(JwtAuthGuard)
