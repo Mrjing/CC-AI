@@ -1,6 +1,6 @@
 import { VerifyCodeDto } from '../verification/dto/verifyCode.dto';
 import { UserLoginDto } from './dto/authLogin.dto';
-import { Controller, Post, UseGuards, Body, Get, Query, Render, Res, Req } from '@nestjs/common';
+import { Controller, Post, UseGuards, Body, Get, Query, Render, Res, Req, HttpException } from '@nestjs/common';
 import { JwtAuthGuard } from '@/common/auth/jwtAuth.guard';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -54,7 +54,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async updatePassword(@Req() req: Request, @Body() body: UpdatePasswordDto) {
-    return this.authService.updatePassword(req, body);
+    throw new HttpException('手机号登录入口暂时关闭', 500);
+    // return this.authService.updatePassword(req, body);
   }
 
   @Post('updatePassByOther')
@@ -104,6 +105,7 @@ export class AuthController {
   @Post('sendPhoneCode')
   @ApiOperation({ summary: '发送手机验证码' })
   async sendPhoneCode(@Body() parmas: SendPhoneCodeDto) {
-    return this.authService.sendPhoneCode(parmas);
+    throw new HttpException('手机号登录入口暂时关闭', 500);
+    // return this.authService.sendPhoneCode(parmas);
   }
 }
