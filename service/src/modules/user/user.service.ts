@@ -15,6 +15,8 @@ import * as _ from 'lodash';
 import { UserLoginDto } from '../auth/dto/authLogin.dto';
 import { VerificationEnum } from '@/common/constants/verification.constant';
 import { UserBalanceService } from '../userBalance/userBalance.service';
+// import { AccountBalanceService } from '../accountBalance/accountBalance.service';
+import { AccountBalanceEntity } from '../accountBalance/accountBalance.entity';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { Request, Response } from 'express';
 import {
@@ -51,6 +53,8 @@ export class UserService {
     private readonly globalConfigService: GlobalConfigService,
     @InjectRepository(ConfigEntity)
     private readonly configEntity: Repository<ConfigEntity>,
+    @InjectRepository(AccountBalanceEntity)
+    private readonly accountBalanceEntity: Repository<AccountBalanceEntity>,
   ) { }
 
   /* create and verify */
@@ -299,6 +303,22 @@ export class UserService {
     return { userInfo, userBalance: { ...userBalance } };
   }
 
+  /* 获取用户基础信息（新） */
+  async getUserInfoNew(userId: number) {
+    const userInfo: any = await this.userEntity.findOne({
+      where: { id: userId },
+      select: ['username', 'avatar', 'role', 'email', 'sign', 'inviteCode', 'openId', 'consecutiveDays', 'phone', 'name'],
+    });
+    if (!userInfo) {
+      throw new HttpException('当前用户信息失效、请重新登录！', HttpStatus.UNAUTHORIZED);
+    }
+    userInfo.isBindWx = !!userInfo?.openId;
+    delete userInfo.openId;
+    const accountBalance = await this.accountBalanceEntity.findOne({ where: { user: { id: userId } } });
+    // const userBalance = await this.userBalanceService.queryUserBalance(userId);
+    return { userInfo, accountBalance };
+  }
+
   /* 获取用户信息 */
   async getUserById(id: number) {
     return await this.userEntity.findOne({ where: { id } });
@@ -443,6 +463,39 @@ export class UserService {
     const ids = rows.map((t) => t.id);
     const data = await this.userBalanceService.queryUserBalanceByIds(ids);
     rows.forEach((user: any) => (user.balanceInfo = data.find((t) => t.userId === user.id)));
+    req.user.role !== 'super' && rows.forEach((t) => (t.email = maskEmail(t.email)));
+    req.user.role !== 'super' && rows.forEach((t) => (t.lastLoginIp = maskIpAddress(t.lastLoginIp)));
+    req.user.role !== 'super' && rows.forEach((t) => (t.phone = maskIpAddress(t.phone)));
+    return { rows, count };
+  }
+
+  /* 查询所有用户（新） */
+  async queryAllNew(query: QueryAllUserDto, req: Request) {
+    const { page = 1, size = 10, username, email, status, keyword, phone } = query;
+    let where = {};
+    username && Object.assign(where, { username: Like(`%${username}%`) });
+    email && Object.assign(where, { email: Like(`%${email}%`) });
+    phone && Object.assign(where, { phone: Like(`%${phone}%`) });
+    status && Object.assign(where, { status });
+    if (keyword) {
+      where = [{ username: Like(`%${keyword}%`) }, { email: Like(`%${keyword}%`) }, { phone: Like(`%${keyword}%`) }];
+    }
+    const [rows, count] = await this.userEntity.findAndCount({
+      skip: (page - 1) * size,
+      where,
+      take: size,
+      order: { createdAt: 'DESC' },
+      cache: true,
+      select: ['username', 'avatar', 'inviteCode', 'role', 'sign', 'status', 'id', 'email', 'createdAt', 'lastLoginIp', 'phone'],
+    });
+    const ids = rows.map((t) => t.id);
+    const accountBalances = await this.accountBalanceEntity.find({ where: { user: { id: In(ids) } }, relations: ['user'] });
+    console.log('accountBalances', accountBalances);
+    rows.forEach((user: any) => (user.accountBalanceInfo = accountBalances.find((t) => t.user.id === user.id)));
+
+    // const data = await this.userBalanceService.queryUserBalanceByIds(ids);
+    // rows.forEach((user: any) => (user.balanceInfo = data.find((t) => t.userId === user.id)));
+
     req.user.role !== 'super' && rows.forEach((t) => (t.email = maskEmail(t.email)));
     req.user.role !== 'super' && rows.forEach((t) => (t.lastLoginIp = maskIpAddress(t.lastLoginIp)));
     req.user.role !== 'super' && rows.forEach((t) => (t.phone = maskIpAddress(t.phone)));
