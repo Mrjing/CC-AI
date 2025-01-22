@@ -20,7 +20,7 @@ import { UserStatusEnum, UserStatusErrMsg } from '@/common/constants/user.consta
 @Controller('user')
 @ApiTags('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Post('update')
   @ApiOperation({ summary: '更新用户信息' })
@@ -68,6 +68,14 @@ export class UserController {
     return await this.userService.queryAll(query, req);
   }
 
+  @Get('queryAllUsers')
+  @ApiOperation({ summary: '查询所有用户(新)' })
+  @UseGuards(AdminAuthGuard)
+  @ApiBearerAuth()
+  async queryAllUsers(@Query() query: QueryAllUserDto, @Req() req: Request) {
+    return await this.userService.queryAllNew(query, req);
+  }
+
   @Get('queryOne')
   @ApiOperation({ summary: '查询单个用户' })
   @UseGuards(AdminAuthGuard)
@@ -97,14 +105,14 @@ export class UserController {
   @UseGuards(AdminAuthGuard)
   @ApiBearerAuth()
   async createUserAccount(@Body() body: CreateUserDto) {
-    const { password } = body
+    const { password } = body;
     const hashedPassword = bcrypt.hashSync(password, 10);
     const newUserData = {
       ...body,
       password: hashedPassword,
       rawPassword: password,
-      status: UserStatusEnum.ACTIVE
-    }
-    return await this.userService.createUser(newUserData)
+      status: UserStatusEnum.ACTIVE,
+    };
+    return await this.userService.createUser(newUserData);
   }
 }

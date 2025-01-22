@@ -18,6 +18,7 @@ import { FingerprintLogEntity } from '../userBalance/fingerprint.entity';
 import { ChatLogEntity } from '../chatLog/chatLog.entity';
 import { ChatGroupEntity } from '../chatGroup/chatGroup.entity';
 import { MidjourneyEntity } from '../midjourney/midjourney.entity';
+import { AccountBalanceEntity } from '../accountBalance/accountBalance.entity';
 
 @Global()
 @Module({
@@ -35,7 +36,8 @@ import { MidjourneyEntity } from '../midjourney/midjourney.entity';
       FingerprintLogEntity,
       ChatLogEntity,
       ChatGroupEntity,
-      MidjourneyEntity
+      MidjourneyEntity,
+      AccountBalanceEntity,
     ]),
   ],
   controllers: [UserController],

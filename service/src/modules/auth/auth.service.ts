@@ -47,7 +47,7 @@ export class AuthService {
     private readonly userBalanceService: UserBalanceService,
     private readonly redisCacheService: RedisCacheService,
     private readonly globalConfigService: GlobalConfigService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     this.getIp();
@@ -172,6 +172,11 @@ export class AuthService {
     return await this.userService.getUserInfo(id);
   }
 
+  async getInfoNew(req: Request) {
+    const { id } = req.user;
+    return await this.userService.getUserInfoNew(id);
+  }
+
   async activateAccount(params: VerifyCodeDto, res: Response) {
     const emailConfigs = await this.configEntity.find({
       where: {
@@ -208,10 +213,8 @@ export class AuthService {
       }
       await this.userBalanceService.addBalanceToNewUser(id, inviteUser?.id);
       res.redirect(
-        `/api/auth/registerSuccess?id=${id.toString().padStart(4, '0')}&username=${username}&email=${email}&registerSuccessEmailTitle=${
-          configMap.registerSuccessEmailTitle
-        }&registerSuccessEmailTeamName=${configMap.registerSuccessEmailTeamName}&registerSuccessEmaileAppend=${
-          configMap.registerSuccessEmaileAppend
+        `/api/auth/registerSuccess?id=${id.toString().padStart(4, '0')}&username=${username}&email=${email}&registerSuccessEmailTitle=${configMap.registerSuccessEmailTitle
+        }&registerSuccessEmailTeamName=${configMap.registerSuccessEmailTeamName}&registerSuccessEmaileAppend=${configMap.registerSuccessEmaileAppend
         }`,
       );
     } catch (error) {

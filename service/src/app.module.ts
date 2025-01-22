@@ -47,6 +47,7 @@ import { GoodsModule } from './modules/goods/goods.module';
 import { GoodsOrderModule } from './modules/goodsOrder/goodsOrder.module';
 import { GoodsOrderItemModule } from './modules/goodsOrderItem/goodsOrderItem.module';
 import { StudyResourceModule } from './modules/studyResource/studyResource.module';
+import { AccountBalanceModule } from './modules/accountBalance/accountBalance.module';
 
 @Global()
 @Module({
@@ -95,6 +96,7 @@ import { StudyResourceModule } from './modules/studyResource/studyResource.modul
     GoodsOrderModule,
     GoodsOrderItemModule,
     StudyResourceModule,
+    AccountBalanceModule,
   ],
   providers: [
     {
