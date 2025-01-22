@@ -12,11 +12,13 @@ import { GlobalQueryDrawTaskDto } from './dto/globalQueryDraw.dto'
 import { AdminAuthGuard } from '@/common/auth/adminAuth.guard';
 import { getAuthorization } from '@/common/utils';
 import { WujieEntity } from './wujie.entity';
+import { UserService } from '../user/user.service'
+import { AccountBalanceService } from '../accountBalance/accountBalance.service'
 
 @ApiTags('wujie')
 @Controller('wujie')
 export class WujieController {
-  constructor(private readonly wujieService: WujieService, private readonly uploadService: UploadService) { }
+  constructor(private readonly wujieService: WujieService, private readonly uploadService: UploadService, private readonly accountBalanceService: AccountBalanceService) { }
 
   @Get('getModelInfo')
   @ApiOperation({ summary: '获取作画模型列表' })
@@ -59,6 +61,13 @@ export class WujieController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async createWithDefaultAI(@Body() params: any, @Req() req: Request) {
+    // 先校验当前用户是否有足够积分，一次默认作画要求积分大于等于0
+    const { num } = params
+    const user = req.user;
+    const accountBalanceData = await this.accountBalanceService.findByUserId(user.id);
+    if (accountBalanceData.balance === 0) {
+      throw new HttpException('您的积分不足，请联系CC客服', 500);
+    }
     const authorization = getAuthorization();
     try {
       const config = {
@@ -81,6 +90,16 @@ export class WujieController {
       if (parseInt(code) !== 200) {
         throw new HttpException(code + ' ' + message, 500);
       }
+
+      // 创建接口执行完成，扣除用户积分
+      const finalBalance = accountBalanceData.balance - data.expected_integral_cost
+      const updateBalanceRes = await this.accountBalanceService.update({
+        userId: user.id,
+        balance: finalBalance <= 0 ? 0 : finalBalance,
+        usedBalance: accountBalanceData.usedBalance + data.expected_integral_cost,
+      });
+      console.log('updateBalanceRes', updateBalanceRes);
+
       // // 录入 wujie 任务表
       console.log('user', req.user.id);
       const { keys } = data;
@@ -112,6 +131,13 @@ export class WujieController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async createWithMJ(@Body() params: any, @Req() req: Request) {
+    // 先校验当前用户是否有足够积分，一次MJ作画要求积分大于等于 8（四张图，一张消耗2积分）
+    const user = req.user;
+    const accountBalanceData = await this.accountBalanceService.findByUserId(user.id);
+    if (accountBalanceData.balance === 0) {
+      throw new HttpException('您的积分不足，请联系CC客服', 500);
+    }
+
     const authorization = getAuthorization();
     try {
       const config = {
@@ -133,6 +159,15 @@ export class WujieController {
       if (parseInt(code) !== 200) {
         throw new HttpException(code + ' ' + message, 500);
       }
+
+      // 创建接口执行完成，扣除用户积分
+      const finalBalance = accountBalanceData.balance - data.expected_integral_cost
+      const updateBalanceRes = await this.accountBalanceService.update({
+        userId: user.id,
+        balance: finalBalance <= 0 ? 0 : finalBalance,
+        usedBalance: accountBalanceData.usedBalance + data.expected_integral_cost,
+      });
+      console.log('updateBalanceRes', updateBalanceRes);
 
       // // 录入 wujie 任务表
       console.log('user', req.user.id);
@@ -505,6 +540,19 @@ export class WujieController {
           }).catch(e => {
             console.log('batch upload error', e)
           })
+        }
+        // 5. 判断刚查的这一批中是否有生成失败的任务，如果有，返还用户积分
+        const newFailedTasks = newUncompletedTaskInfo.filter(item => item.status === 3)
+        if (newFailedTasks.length) {
+          const failedIntegralCost = newFailedTasks.reduce((acc, cur) => acc + cur.integral_cost, 0)
+          const accountBalanceData = await this.accountBalanceService.findByUserId(req.user.id);
+          const finalBalance = accountBalanceData.balance + failedIntegralCost
+          const updateBalanceRes = await this.accountBalanceService.update({
+            userId: req.user.id,
+            balance: finalBalance,
+            usedBalance: accountBalanceData.usedBalance - failedIntegralCost,
+          });
+          console.log('返还积分 updateBalanceRes', updateBalanceRes);
         }
       }
 

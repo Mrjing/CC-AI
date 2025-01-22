@@ -74,6 +74,14 @@ export class AuthController {
     return this.authService.getInfo(req);
   }
 
+  @Get('getInfoNew')
+  @ApiOperation({ summary: '获取用户个人信息（新）' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getInfoNew(@Req() req: Request) {
+    return this.authService.getInfoNew(req);
+  }
+
   @Get('activateAccount')
   @ApiOperation({ summary: '账户激活' })
   async activateAccount(@Query() parmas: VerifyCodeDto, @Res() res: Response) {
