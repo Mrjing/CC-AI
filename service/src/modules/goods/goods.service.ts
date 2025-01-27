@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger, Req } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GoodsEntity } from './goods.entity'
-import { In, Repository, IsNull, Not } from 'typeorm';
+import { In, Repository, IsNull, Not, Like } from 'typeorm';
 import { GlobalConfigService } from '../globalConfig/globalConfig.service';
 import { query, Request } from 'express';
 import { CreateGoodsDto } from './dto/createGoods.dto'
@@ -63,8 +63,9 @@ export class GoodsService {
     try {
       const { page, size, name, category, sellStatus } = params
       const where = {}
+      const options = {}
       if (name) {
-        where['name'] = name
+        where['name'] = Like(`%${name}%`)
       }
       if (category) {
         where['category'] = category
@@ -72,11 +73,18 @@ export class GoodsService {
       if (sellStatus) {
         where['sellStatus'] = sellStatus
       }
+
+      if (page && size) {
+        options['skip'] = (page - 1) * size
+        options['take'] = size
+      }
+
       const res = await this.goodsEntity.findAndCount({
+        ...options,
         where,
         order: { createdAt: 'DESC' },
-        skip: (page - 1) * size,
-        take: size,
+        // skip: (page - 1) * size,
+        // take: size,
       })
       return res
     } catch (e) {

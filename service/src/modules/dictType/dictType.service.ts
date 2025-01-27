@@ -13,7 +13,7 @@ export class DictTypeService {
     @InjectRepository(DictTypeEntity)
     private readonly dictTypeRepository: Repository<DictTypeEntity>,
     private readonly dictDataService: DictDataService,
-  ) {}
+  ) { }
 
   // 查询字典类型列表
   async findAll(queryParams: QueryDictTypeDto) {
@@ -36,7 +36,7 @@ export class DictTypeService {
       .getManyAndCount();
 
     return {
-      items,
+      data: items,
       total,
       page,
       pageSize,

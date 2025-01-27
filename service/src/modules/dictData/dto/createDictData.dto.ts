@@ -32,7 +32,7 @@ export class CreateDictDataDto {
   remark: string;
 
   @ApiProperty({ description: '创建者' })
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   createUser: number;
 

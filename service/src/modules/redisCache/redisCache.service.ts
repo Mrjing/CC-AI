@@ -3,7 +3,7 @@ import { RedisClientType } from 'redis';
 
 @Injectable()
 export class RedisCacheService implements OnModuleInit {
-  constructor(@Inject('REDIS_CLIENT') private redisClient: RedisClientType) {}
+  constructor(@Inject('REDIS_CLIENT') private redisClient: RedisClientType) { }
 
   async onModuleInit() {
     //  设置配置参数
@@ -14,7 +14,7 @@ export class RedisCacheService implements OnModuleInit {
     return 1;
   }
 
-  async get(body) {
+  async get(body): Promise<string | number> {
     const { key } = body;
     const res = await this.redisClient.get(key);
     return await this.redisClient.get(key);
@@ -57,8 +57,8 @@ export class RedisCacheService implements OnModuleInit {
 
   /* 检测token是否有效 */
   async checkTokenAuth(token, req) {
-    const {id: userId, role} = req.user
-    if(role === 'visitor') return true
+    const { id: userId, role } = req.user
+    if (role === 'visitor') return true
     const storedToken = await this.redisClient.get(`token:${userId}`);
 
     /* first set token */
@@ -75,5 +75,13 @@ export class RedisCacheService implements OnModuleInit {
       throw new HttpException('您已在其他设备覆盖登录、请您重新登录！', HttpStatus.UNAUTHORIZED);
       // return true;
     }
+  }
+
+  async increment(key: string): Promise<void> {
+    await this.redisClient.incr(key);
+  }
+
+  async decrement(key: string): Promise<void> {
+    await this.redisClient.decr(key);
   }
 }

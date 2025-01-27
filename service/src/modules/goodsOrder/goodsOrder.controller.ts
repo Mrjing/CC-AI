@@ -266,14 +266,22 @@ export class GoodsOrderController {
   }
 
   @ApiOperation({ summary: '查询订单' })
-  @Get('queryGoodsOrder')
+  @Post('queryGoodsOrder')
   @UseGuards(JwtAuthGuard)
-  async queryGoodsOrder(@Query() query) {
+  async queryGoodsOrder(@Body() body) {
     try {
       // 1. 查询订单
-      const [goodsOrders, total] = await this.goodsOrderService.queryGoodsOrder(query);
+      const [goodsOrders, total] = await this.goodsOrderService.queryGoodsOrder(body);
+      if (total === 0) {
+        return {
+          data: [],
+          total,
+        }
+      }
+      console.log('goodsOrders', goodsOrders);
       const goodsOrdersMapByNo = flatMapByKey(goodsOrders, 'orderNo');
       const goodsOrdersNos = goodsOrders.map((item) => item.orderNo);
+      console.log('goodsOrdersNos', goodsOrdersNos);
       // 2. 查询订单关联的订单项
       let data = [];
       const goodsOrderItemsMapByOrderNo = flatMapByKey(
