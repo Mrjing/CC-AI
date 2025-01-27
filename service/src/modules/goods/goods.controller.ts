@@ -19,9 +19,10 @@ export class GoodsController {
   @Post('createGoods')
   @UseGuards(AdminAuthGuard)
   @ApiBearerAuth()
-  async createGoods(@Body() data: GoodsEntity) {
+  async createGoods(@Body() data: GoodsEntity, @Req() req) {
     try {
-      const res = await this.goodsService.createGoods(data)
+      const userId = req.user.id
+      const res = await this.goodsService.createGoods({ ...data })
       return res
     } catch (e) {
       console.log('createGoods e', e)
@@ -56,12 +57,15 @@ export class GoodsController {
   }
 
   @ApiOperation({ summary: '查询商品' })
-  @Get('queryGoods')
+  @Post('queryGoods')
   @UseGuards(JwtAuthGuard)
-  async queryGoods(@Query() query) {
+  async queryGoods(@Body() data) {
     try {
-      const res = await this.goodsService.queryGoods(query)
-      return res
+      const res = await this.goodsService.queryGoods(data)
+      return {
+        data: res[0],
+        total: res[1]
+      }
     } catch (e) {
       console.log('queryGoods e', e)
       throw e

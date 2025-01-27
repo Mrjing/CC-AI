@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, OneToOne, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from 'src/common/entity/baseEntity';
 import { DictTypeEntity } from '../dictType/dictType.entity';
 
@@ -10,9 +10,9 @@ export class DictDataEntity extends BaseEntity {
   @Column({ comment: '字典键值', nullable: false, length: 64 })
   value: string;
 
-  @OneToOne(() => DictTypeEntity)
-  @JoinColumn({ name: 'type', referencedColumnName: 'type' })
-  type: string;
+  @ManyToOne(() => DictTypeEntity)
+  @JoinColumn({ name: 'dictType', referencedColumnName: 'type' })
+  dictType: DictTypeEntity;
 
   @Column({ comment: '状态（0正常 1停用）', default: 0, nullable: false })
   status: number;

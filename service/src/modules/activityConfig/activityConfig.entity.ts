@@ -24,7 +24,7 @@ export class ActivityConfigEntity extends BaseEntity {
   @Column({ comment: '活动结束时间', type: 'datetime', length: 0, nullable: false })
   endTime: Date;
 
-  @Column({ comment: '活动状态 【0 发布 1 取消】', nullable: false, default: 0 })
+  @Column({ comment: '活动状态 【0 上线 1 下线】', nullable: false, default: 0 })
   status: number;
 
   @Column({ comment: '创建者', nullable: false, default: 0 })

@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { ActivityConfigEntity } from './activityConfig.entity';
 import { CreateActivityConfigDto } from './dto/createActivityConfig.dto';
 import { UpdateActivityConfigDto } from './dto/updateActivityConfig.dto';
@@ -12,7 +12,7 @@ export class ActivityConfigService {
   constructor(
     @InjectRepository(ActivityConfigEntity)
     private readonly activityConfigEntity: Repository<ActivityConfigEntity>,
-  ) {}
+  ) { }
 
   async createActivityConfig(data: CreateActivityConfigDto) {
     try {
@@ -48,13 +48,25 @@ export class ActivityConfigService {
 
   async queryActivityConfig(params: QueryActivityConfigDto) {
     try {
-      const { page = 1, size = 10, ...rest } = params;
-      const res = await this.activityConfigEntity
-        .createQueryBuilder()
-        .where(rest)
-        .skip((page - 1) * size)
-        .take(size)
-        .getManyAndCount();
+      const { page = 1, size = 10, name, ...rest } = params;
+      // const res = await this.activityConfigEntity
+      //   .createQueryBuilder()
+      //   .where({
+      //     name: Like(`%${name}%`),// 模糊搜索
+      //     // ...rest,
+      //   })
+      //   .skip((page - 1) * size)
+      //   .take(size)
+      //   .getManyAndCount();
+      const res = await this.activityConfigEntity.findAndCount({
+        where: {
+          name: Like(`%${name}%`),
+          ...rest,
+        },
+        order: { createdAt: 'DESC' },
+        skip: (page - 1) * size,
+        take: size,
+      })
       return res;
     } catch (e) {
       console.log('queryActivityConfig e', e);

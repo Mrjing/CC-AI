@@ -12,11 +12,12 @@ export class StudyResourceService {
   constructor(
     @InjectRepository(StudyResourceEntity)
     private readonly studyResourceRepository: Repository<StudyResourceEntity>,
-  ) {}
+  ) { }
 
   // 创建学习资源
   async create(createStudyResourceDto: CreateStudyResourceDto) {
     const studyResource = this.studyResourceRepository.create(createStudyResourceDto);
+    console.log('studyResource', studyResource);
     return await this.studyResourceRepository.save(studyResource);
   }
 
@@ -57,7 +58,7 @@ export class StudyResourceService {
       .getManyAndCount();
 
     return {
-      items,
+      data: items,
       total,
       page,
       pageSize,
