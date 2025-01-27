@@ -2,6 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsOptional, IsString, Length } from 'class-validator';
 
 export class UpdateDictDataDto {
+  @ApiProperty({ description: '字典数据ID' })
+  @IsNotEmpty({ message: 'ID不能为空' })
+  id?: number
+
   @ApiProperty({ description: '字典标签' })
   @IsOptional()
   @IsString()

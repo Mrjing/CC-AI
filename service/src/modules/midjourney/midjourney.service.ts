@@ -31,7 +31,7 @@ export class MidjourneyService {
     // private readonly badwordsService: BadwordsService,
     private readonly userBalanceService: UserBalanceService,
     private redisCacheService: RedisCacheService,
-  ) {}
+  ) { }
 
   private lockPrompt = [];
 
@@ -483,7 +483,7 @@ export class MidjourneyService {
       const cache = await this.redisCacheService.get({ key: 'midjourney:getList' });
       if (cache) {
         try {
-          return JSON.parse(cache);
+          return JSON.parse(cache as string);
         } catch (error) {
           return [];
         }

@@ -28,7 +28,7 @@ export class CreateStudyResourceDto {
   src?: string;
 
   @ApiProperty({ description: '创建者' })
-  @IsNotEmpty({ message: '创建者不能为空' })
+  @IsOptional()
   @IsNumber()
   createUser: number;
 

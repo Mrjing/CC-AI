@@ -12,7 +12,7 @@ import { DeleteActivityConfigDto } from './dto/deleteActivityConfig.dto';
 @ApiTags('activityConfig')
 @Controller('activityConfig')
 export class ActivityConfigController {
-  constructor(private readonly activityConfigService: ActivityConfigService) {}
+  constructor(private readonly activityConfigService: ActivityConfigService) { }
 
   @ApiOperation({ summary: '创建活动配置' })
   @Post('createActivityConfig')
@@ -55,12 +55,15 @@ export class ActivityConfigController {
   }
 
   @ApiOperation({ summary: '查询活动配置列表' })
-  @Get('queryActivityConfig')
+  @Post('queryActivityConfig')
   @UseGuards(AdminAuthGuard)
-  async queryActivityConfig(@Query() params: QueryActivityConfigDto) {
+  async queryActivityConfig(@Body() body: QueryActivityConfigDto) {
     try {
-      const res = await this.activityConfigService.queryActivityConfig(params);
-      return res;
+      const res = await this.activityConfigService.queryActivityConfig(body);
+      return {
+        data: res[0],
+        total: res[1]
+      };
     } catch (e) {
       console.log('queryActivityConfig e', e);
       throw e;
