@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-dependencies.outputs.cache-hit != 'true'
-        run: cd service && npm install
+        run: cd service && npm install --legacy-peer-deps
 
       - name: Build project
         run: cd service && npm run build
@@ -59,7 +59,7 @@ jobs:
           cd /jkc/test/CC-AI/service
           nvm use 18
           npm i -g pm2
-          npm install
+          npm install --legacy-peer-deps
           npm run restart
           EOF
         env:
