@@ -48,24 +48,22 @@ export class ActivityConfigService {
 
   async queryActivityConfig(params: QueryActivityConfigDto) {
     try {
-      const { page = 1, size = 10, name, ...rest } = params;
-      // const res = await this.activityConfigEntity
-      //   .createQueryBuilder()
-      //   .where({
-      //     name: Like(`%${name}%`),// 模糊搜索
-      //     // ...rest,
-      //   })
-      //   .skip((page - 1) * size)
-      //   .take(size)
-      //   .getManyAndCount();
+      const { page, size, name, ...rest } = params;
+
+      const options = {}
+      const where = { ...rest }
+      if (page && size) {
+        options["skip"] = (page - 1) * size
+        options["take"] = size
+      }
+      if (name) {
+        where["name"] = Like(`%${name}%`)
+      }
+
       const res = await this.activityConfigEntity.findAndCount({
-        where: {
-          name: Like(`%${name}%`),
-          ...rest,
-        },
+        ...options,
+        where,
         order: { createdAt: 'DESC' },
-        skip: (page - 1) * size,
-        take: size,
       })
       return res;
     } catch (e) {

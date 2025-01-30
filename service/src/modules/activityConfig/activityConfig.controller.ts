@@ -56,7 +56,7 @@ export class ActivityConfigController {
 
   @ApiOperation({ summary: '查询活动配置列表' })
   @Post('queryActivityConfig')
-  @UseGuards(AdminAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async queryActivityConfig(@Body() body: QueryActivityConfigDto) {
     try {
       const res = await this.activityConfigService.queryActivityConfig(body);

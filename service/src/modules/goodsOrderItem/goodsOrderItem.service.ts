@@ -82,8 +82,18 @@ export class GoodsOrderItemService {
 
   async queryGoodsOrderItemsInOrders(orderNos: string[]) {
     try {
-      const res = await this.goodsOrderItemEntity.createQueryBuilder().where('orderNo IN (:...orderNos)', { orderNos }).getMany();
-      return res;
+      // const res = await this.goodsOrderItemEntity.createQueryBuilder().where('orderNo IN (:...orderNos)', { orderNos }).getMany();
+      const goodsOrderItemList = await this.goodsOrderItemEntity.find({ where: { order: { orderNo: In(orderNos) } }, relations: ['order'] });
+      // console.log('queryGoodsOrderItemsInOrders res', res)
+      const transformGoodsOrderItemList = goodsOrderItemList.map(item => {
+        const { order, ...rest } = item;
+        return {
+          ...rest,
+          orderNo: order.orderNo
+        }
+      })
+
+      return transformGoodsOrderItemList;
     } catch (e) {
       console.log('queryGoodsOrderItemsInOrders e', e);
       throw e;

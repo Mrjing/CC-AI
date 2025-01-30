@@ -272,6 +272,10 @@ export class UserService {
     return await this.userEntity.findOne({ where: { id: userId } });
   }
 
+  async queryUsersByIds(ids: number[]): Promise<UserEntity[]> {
+    return await this.userEntity.find({ where: { id: In(ids) } });
+  }
+
   /* 检查用户状态 */
   async checkUserStatus(user) {
     const { id: userId, role } = user;

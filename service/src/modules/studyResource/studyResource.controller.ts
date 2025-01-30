@@ -8,7 +8,7 @@ import { QueryStudyResourceDto } from './dto/queryStudyResource.dto';
 import { AdminAuthGuard } from '@/common/auth/adminAuth.guard';
 import { JwtAuthGuard } from '@/common/auth/jwtAuth.guard';
 
-@ApiTags('学习资源')
+@ApiTags('studyResource')
 @Controller('studyResource')
 export class StudyResourceController {
   constructor(private readonly studyResourceService: StudyResourceService) { }

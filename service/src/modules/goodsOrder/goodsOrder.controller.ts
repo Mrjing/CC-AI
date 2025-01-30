@@ -14,6 +14,8 @@ import { getAuthorization } from '@/common/utils';
 import { CreateGoodsOrderApiDto, CreateGoodsOrderDto } from './dto/createGoodsOrder.dto';
 import { UpdateGoodsOrderApiDto } from './dto/updateGoodsOrder.dto';
 import { createOrderId, flatMapByKey } from '@/common/utils';
+import { UserService } from '../user/user.service'
+import { RedisCacheService } from '../redisCache/redisCache.service'
 
 @ApiTags('goodsOrder')
 @Controller('goodsOrder')
@@ -24,6 +26,8 @@ export class GoodsOrderController {
     private readonly goodsService: GoodsService,
     private readonly uploadService: UploadService,
     private readonly payService: PayService,
+    private readonly userService: UserService,
+    private readonly redisCacheService: RedisCacheService
   ) { }
 
   @ApiOperation({ summary: '创建订单' })
@@ -279,6 +283,9 @@ export class GoodsOrderController {
         }
       }
       console.log('goodsOrders', goodsOrders);
+      const userIds = goodsOrders.map((item) => item.userId);
+      const users = await this.userService.queryUsersByIds(userIds);
+      const usersMapById = flatMapByKey(users, 'id');
       const goodsOrdersMapByNo = flatMapByKey(goodsOrders, 'orderNo');
       const goodsOrdersNos = goodsOrders.map((item) => item.orderNo);
       console.log('goodsOrdersNos', goodsOrdersNos);
@@ -288,12 +295,18 @@ export class GoodsOrderController {
         await this.goodsOrderItemService.queryGoodsOrderItemsInOrders(goodsOrdersNos),
         'orderNo' as any,
       );
+      console.log('goodsOrderItemsMapByOrderNo', goodsOrderItemsMapByOrderNo)
       // 3. 组合返回
       for (let orderNo of goodsOrdersNos) {
         const curOrder = goodsOrdersMapByNo[orderNo][0];
+        const redisKey = `order:${orderNo}:qrcode`;
+        const qrcodeUrl = await this.redisCacheService.get({ key: redisKey })
+        const [curUser] = usersMapById[curOrder.userId];
         data.push({
           ...curOrder,
           orderItems: goodsOrderItemsMapByOrderNo[orderNo],
+          userName: curUser.name,
+          qrcodeUrl
         });
       }
       return {

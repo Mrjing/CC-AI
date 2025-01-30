@@ -13,6 +13,7 @@ import { UserBalanceService } from '../userBalance/userBalance.service';
 import { GlobalConfigService } from '../globalConfig/globalConfig.service';
 import { createRandomNonceStr, importDynamic } from '@/common/utils';
 import { UserService } from '../user/user.service';
+import { RedisCacheService } from '../redisCache/redisCache.service'
 
 @Injectable()
 export class PayService {
@@ -30,6 +31,7 @@ export class PayService {
     private readonly userBalanceService: UserBalanceService,
     private readonly globalConfigService: GlobalConfigService,
     private readonly userService: UserService,
+    private readonly redisCacheService: RedisCacheService,
   ) { }
 
   private WxPay;
@@ -507,7 +509,15 @@ export class PayService {
         console.log('wx-native 获取二维码地址为空', res);
       }
 
+      // 将二维码地址写入redis缓存，并设置2小时有效期
+      const redis_key = `order:${orderId}:qrcode`;
+      await this.redisCacheService.set({
+        key: redis_key,
+        val: url_qrcode
+      }, 7200);
+
       return { url_qrcode, isRedirect: false };
+
     }
     throw new HttpException('unsupported pay type', HttpStatus.BAD_REQUEST);
   }
