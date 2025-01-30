@@ -67,10 +67,10 @@ export class GoodsService {
       if (name) {
         where['name'] = Like(`%${name}%`)
       }
-      if (category) {
+      if (category !== undefined) {
         where['category'] = category
       }
-      if (sellStatus) {
+      if (sellStatus !== undefined) {
         where['sellStatus'] = sellStatus
       }
 
