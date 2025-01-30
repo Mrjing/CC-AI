@@ -55,6 +55,23 @@ export class DictDataController {
     }
   }
 
+  // 返回给C端字典Map
+  @Get('dictMap')
+  @ApiOperation({ summary: '查询字典数据Map' })
+  @UseGuards(JwtAuthGuard)
+  async dictMap() {
+    const [dictDataList, total] = await this.dictDataService.findAll({ status: 0 })
+    const dictMap = {}
+    dictDataList.forEach(item => {
+      if (!dictMap[item.dictType.type]) {
+        dictMap[item.dictType.type] = []
+      }
+
+      dictMap[item.dictType.type].push(item)
+    })
+    return dictMap
+  }
+
   // @Get(':id')
   // @ApiOperation({ summary: '根据ID查询字典数据' })
   // @UseGuards(JwtAuthGuard)

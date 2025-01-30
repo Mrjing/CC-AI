@@ -7,12 +7,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GoodsEntity } from '../goods/goods.entity';
 import { GoodsOrderEntity } from '../goodsOrder/goodsOrder.entity';
 import { GoodsOrderItemEntity } from '../goodsOrderItem/goodsOrderItem.entity';
+import { RedisCacheService } from '../redisCache/redisCache.service'
 
 @Global()
 @Module({
   imports: [TypeOrmModule.forFeature([OrderEntity, CramiPackageEntity, GoodsEntity, GoodsOrderEntity, GoodsOrderItemEntity])],
   controllers: [PayController],
-  providers: [PayService],
+  providers: [PayService, RedisCacheService],
   exports: [PayService],
 })
-export class PayModule {}
+export class PayModule { }
