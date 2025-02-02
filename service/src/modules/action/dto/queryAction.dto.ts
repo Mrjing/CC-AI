@@ -20,4 +20,12 @@ export class QueryActionDto {
   @IsString()
   @IsOptional()
   actionType: string;
+
+  @IsNumber()
+  @IsOptional()
+  page: number;
+
+  @IsNumber()
+  @IsOptional()
+  size: number;
 }

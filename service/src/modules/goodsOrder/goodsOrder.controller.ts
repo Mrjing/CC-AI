@@ -192,8 +192,8 @@ export class GoodsOrderController {
     //   throw new HttpException('无权操作订单', 400)
     // }
 
-    // 判断当前订单状态是否为交易成功，是则不允许关闭
-    if (curOrder.status === 3) {
+    // 判断当前订单状态是否为交易成功 或者 已关闭，是则不允许关闭
+    if (curOrder.status === 3 || curOrder.status === 5 || curOrder.status === 6 || curOrder.status === 7) {
       throw new HttpException('订单状态错误，订单已完成交易，不允许关闭', 500);
     }
 

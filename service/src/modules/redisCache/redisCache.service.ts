@@ -20,6 +20,11 @@ export class RedisCacheService implements OnModuleInit {
     return await this.redisClient.get(key);
   }
 
+  async getMultiple(keys: string[]): Promise<(string | null)[]> {
+    const values = await this.redisClient.mGet(keys);
+    return values;
+  }
+
   async set(body, time?: number) {
     try {
       const { key, val } = body;

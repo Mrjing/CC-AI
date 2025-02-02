@@ -65,6 +65,16 @@ export class WujieService {
     }
   }
 
+  async batchQueryDrawTasksByIds(ids: number[]) {
+    try {
+      const res = await this.wujieEntity.findBy({ id: In(ids), status: 4 })
+      return res
+    } catch (e) {
+      console.log('batchQueryDrawTasksByIds e', e)
+      throw e
+    }
+  }
+
   async batchQueryToTransformTasks() {
     try {
       const res = await this.wujieEntity.find({
@@ -81,11 +91,15 @@ export class WujieService {
     }
   }
 
-  async batchQueryGlobalDrawTasks(params: GlobalQueryDrawTaskDto) {
+  async batchQueryGlobalDrawTasks(params: Partial<GlobalQueryDrawTaskDto>) {
     try {
-      const { page, size } = params
+      const { page, size, userId } = params
       const where = {
         status: 4
+      }
+
+      if (userId) {
+        where['userId'] = userId
       }
       const res = await this.wujieEntity.findAndCount({
         where,
@@ -96,6 +110,35 @@ export class WujieService {
       return res
     } catch (e) {
       console.log('batchQueryGlobalDrawTasks e', e)
+      throw e
+    }
+  }
+
+  async queryFinishedDrawTasksByUserId(userId: number) {
+    try {
+      const res = await this.wujieEntity.find({
+        where: {
+          userId,
+          status: 4
+        }
+      })
+      return res
+    } catch (e) {
+      console.log('queryFinishedDrawTasksByUserId e', e)
+      throw e
+    }
+  }
+
+  async queryDrawTaskDetail(key: string) {
+    try {
+      const res = await this.wujieEntity.findOne({
+        where: {
+          key
+        }
+      })
+      return res
+    } catch (e) {
+      console.log('queryDrawTaskDetail e', e)
       throw e
     }
   }
