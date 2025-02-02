@@ -51,6 +51,18 @@ export class ActionService {
       await this.redisCacheService.increment(redisKey);
     }
 
+    // 新增作品被收藏-新增每个wujie作品的被收藏数并缓存
+    if (createActionDto.actionType === 'COLLECT' && createActionDto.targetType === 'wujie') {
+      const redisKey = `target:wujie:${createActionDto.targetId}:collects`;
+      await this.redisCacheService.increment(redisKey);
+    }
+
+    // 新增用户收藏-新增每个用户的收藏数并缓存
+    if (createActionDto.actionType === 'COLLECT' && createActionDto.sourceType === 'user') {
+      const redisKey = `source:user:${createActionDto.sourceId}:collects`;
+      await this.redisCacheService.increment(redisKey);
+    }
+
     return savedAction;
   }
 
@@ -70,7 +82,58 @@ export class ActionService {
     return this.actionRepository.findOne({ where: { id } });
   }
 
-  // 删除 Action
+  // 根据 source target信息删除Action
+  async removeActionByCondition(condition: Partial<QueryActionDto>): Promise<void> {
+    const { actionType, sourceType, targetType } = condition
+    if (actionType === 'DISLIKE' && sourceType === 'user' && targetType === 'wujie') {
+      const [actions] = await this.findActionByCondition({ ...condition, actionType: 'LIKE' })
+      const curAction = actions[0]
+      if (curAction) {
+        // redis 缓存计数 减作品被点赞数
+        const redisKey = `target:wujie:${curAction.targetId}:likes`;
+        await this.redisCacheService.decrement(redisKey);
+        // redis 缓存计数 减用户点赞其他作品数
+        const redisKey2 = `source:user:${curAction.sourceId}:likes`;
+        await this.redisCacheService.decrement(redisKey2);
+        // 删除点赞记录
+        await this.actionRepository.delete({ id: curAction.id });
+      }
+    }
+
+    if (actionType === 'UNCOLLECT' && sourceType === 'user' && targetType === 'wujie') {
+      const [actions] = await this.findActionByCondition({ ...condition, actionType: 'COLLECT' })
+      const curAction = actions[0]
+
+      if (curAction) {
+        // redis 缓存计数 减作品被收藏数
+        const redisKey = `target:wujie:${curAction.targetId}:collects`;
+        await this.redisCacheService.decrement(redisKey);
+        // redis 缓存计数 减用户收藏数
+        const redisKey2 = `source:user:${curAction.sourceId}:collects`;
+        await this.redisCacheService.decrement(redisKey2);
+        // 删除收藏记录
+        await this.actionRepository.delete({ id: curAction.id });
+      }
+    }
+
+    if (actionType === 'UNFOLLOW' && sourceType === 'user' && targetType === 'user') {
+      const [actions] = await this.findActionByCondition({ ...condition, actionType: 'FOLLOW' })
+      const curAction = actions[0]
+
+      if (curAction) {
+        // redis 缓存计数 减用户关注数
+        const redisKey = `source:user:${curAction.sourceId}:follows`;
+        await this.redisCacheService.decrement(redisKey);
+        // redis 缓存计数 减用户被关注数
+        const redisKey2 = `target:user:${curAction.targetId}:follows`;
+        await this.redisCacheService.decrement(redisKey2);
+        // 删除关注记录
+        await this.actionRepository.delete({ id: curAction.id });
+      }
+    }
+  }
+
+  // DEPRECATED: 根据actionID 删除 Action
   async removeAction(id: number): Promise<void> {
     const action = await this.actionRepository.findOne({ where: { id } });
     if (!action) {
@@ -101,11 +164,28 @@ export class ActionService {
       await this.redisCacheService.decrement(redisKey);
     }
 
+    // 取消作品被收藏-减少每个wujie作品的被收藏数并缓存
+    if (action.actionType === 'COLLECT' && action.targetType === 'wujie') {
+      const redisKey = `target:wujie:${action.targetId}:collects`;
+      await this.redisCacheService.decrement(redisKey);
+    }
+
+    // 取消用户收藏-减少每个用户的收藏数并缓存
+    if (action.actionType === 'COLLECT' && action.sourceType === 'user') {
+      const redisKey = `source:user:${action.sourceId}:collects`;
+      await this.redisCacheService.decrement(redisKey);
+    }
+
     await this.actionRepository.delete({ id });
   }
 
   // 条件查询Action
-  async findActionByCondition(condition: QueryActionDto): Promise<ActionEntity[]> {
-    return this.actionRepository.find({ where: condition });
+  async findActionByCondition(condition: Partial<QueryActionDto>) {
+    const { page, size, ...rest } = condition
+    const option = { where: { ...rest } }
+    if (page && size) {
+      Object.assign(option, { skip: (page - 1) * size, take: size })
+    }
+    return this.actionRepository.findAndCount({ ...option, order: { createdAt: 'DESC' } });
   }
 }

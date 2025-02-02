@@ -48,6 +48,8 @@ import { GoodsOrderModule } from './modules/goodsOrder/goodsOrder.module';
 import { GoodsOrderItemModule } from './modules/goodsOrderItem/goodsOrderItem.module';
 import { StudyResourceModule } from './modules/studyResource/studyResource.module';
 import { AccountBalanceModule } from './modules/accountBalance/accountBalance.module';
+import { ActionModule } from './modules/action/action.module'
+import { NotificationModule } from './modules/notification/notification.module'
 
 @Global()
 @Module({
@@ -97,6 +99,8 @@ import { AccountBalanceModule } from './modules/accountBalance/accountBalance.mo
     GoodsOrderItemModule,
     StudyResourceModule,
     AccountBalanceModule,
+    ActionModule,
+    NotificationModule
   ],
   providers: [
     {
@@ -105,4 +109,4 @@ import { AccountBalanceModule } from './modules/accountBalance/accountBalance.mo
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

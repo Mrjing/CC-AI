@@ -57,6 +57,7 @@ export class GoodsOrderService {
         .where(rest)
         .skip((page - 1) * size)
         .take(size)
+        .orderBy('createdAt', 'DESC')
         .getManyAndCount();
       return res;
     } catch (e) {

@@ -10,15 +10,17 @@ import { GetDrawListDto } from './dto/getDrawList.dto';
 import { QueryDrawTaskDto } from './dto/queryDrawTask.dto';
 import { GlobalQueryDrawTaskDto } from './dto/globalQueryDraw.dto'
 import { AdminAuthGuard } from '@/common/auth/adminAuth.guard';
-import { getAuthorization } from '@/common/utils';
+import { getAuthorization, flatMapByKey } from '@/common/utils';
 import { WujieEntity } from './wujie.entity';
 import { UserService } from '../user/user.service'
 import { AccountBalanceService } from '../accountBalance/accountBalance.service'
+import { ActionService } from '../action/action.service'
+import { RedisCacheService } from '../redisCache/redisCache.service';
 
 @ApiTags('wujie')
 @Controller('wujie')
 export class WujieController {
-  constructor(private readonly wujieService: WujieService, private readonly uploadService: UploadService, private readonly accountBalanceService: AccountBalanceService) { }
+  constructor(private readonly wujieService: WujieService, private readonly uploadService: UploadService, private readonly accountBalanceService: AccountBalanceService, private readonly userService: UserService, private readonly actionService: ActionService, private readonly redisCacheService: RedisCacheService) { }
 
   @Get('getModelInfo')
   @ApiOperation({ summary: '获取作画模型列表' })
@@ -270,7 +272,7 @@ export class WujieController {
 
   @ApiOperation({ summary: '获取单个作画任务信息' })
   @Get('getDrawTaskInfo')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async getDrawTaskInfo(@Query('key') key: string) {
     const authorization = getAuthorization();
@@ -306,32 +308,271 @@ export class WujieController {
     }
   }
 
+  @ApiOperation({ summary: '当前用户获取单个作画信息' })
+  @UseGuards(JwtAuthGuard)
+  @Post('getFinishedDrawDetailInfo')
+  async getFinishedDrawDetailInfo(@Body() body: {
+    key: string
+  }, @Req() req: Request) {
+    const curReqUserId = req.user.id
+    // 1. 查询图片详情
+    const taskDetail = await this.wujieService.queryDrawTaskDetail(body.key)
+    // 2. 查询当前用户是否关注过当前图片作者
+    const curDrawUserId = taskDetail.userId
+    const curUser = await this.userService.queryUserInfoById(curDrawUserId)
+    const [followedActions] = await this.actionService.findActionByCondition({
+      sourceId: curReqUserId,
+      targetId: curDrawUserId,
+      actionType: 'FOLLOW',
+      sourceType: 'user',
+      targetType: 'user',
+    })
+    console.log('followedAction', followedActions)
+    const isFollow = followedActions.length > 0
+    // 3. 查询当前图片的被点赞数
+    const likedRedisKey = `target:wujie:${taskDetail.id}:likes`
+    const likedCount = Number((await this.redisCacheService.get({ key: likedRedisKey })) || 0)
+    console.log('likedCount', likedCount)
+    // 4. 查询当前用户是否点赞过当前图片
+    const [likedActions] = await this.actionService.findActionByCondition({
+      sourceId: curReqUserId,
+      targetId: taskDetail.id,
+      actionType: 'LIKE',
+      sourceType: 'user',
+      targetType: 'wujie',
+    })
+    console.log('likedAction', likedActions)
+    const isLike = likedActions.length > 0
+    // 5. 查询当前图片的被收藏数
+    const collectedRedisKey = `target:wujie:${taskDetail.id}:collects`
+    const collectedCount = Number((await this.redisCacheService.get({ key: collectedRedisKey })) || 0)
+    console.log('collectedCount', collectedCount)
+    // 6. 查询当前用户是否收藏过当前图片
+    const [collectedActions] = await this.actionService.findActionByCondition({
+      sourceId: curReqUserId,
+      targetId: taskDetail.id,
+      actionType: 'COLLECT',
+      sourceType: 'user',
+      targetType: 'wujie',
+    })
+    console.log('collectedAction', collectedActions)
+    const isCollect = collectedActions.length > 0
+    return {
+      ...taskDetail,
+      isFollow,
+      isLike,
+      isCollect,
+      likedCount,
+      collectedCount,
+      user: {
+        id: curUser.id,
+        name: curUser.name || curUser.username,
+        head: curUser.avatar,
+      }
+    }
+  }
+
+  @ApiOperation({ summary: '获取用户已完成作画数据' })
+  @Post('batchGetFinishedDrawInfoByUser')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async batchGetFinishedDrawInfoByUser(@Body() body: QueryDrawTaskDto, @Req() req: Request) {
+    try {
+      const userId = body.userId
+      // 1. 先查询用户已完成的绘画，按时间倒排
+      const [taskList, total] = await this.wujieService.batchQueryGlobalDrawTasks({
+        userId,
+        page: body.page,
+        size: body.size,
+      });
+      if (taskList.length === 0) {
+        return {
+          list: [],
+          total,
+        }
+      }
+      const curUser = await this.userService.queryUserInfoById(userId)
+      // 批量查询这批作品对应的点赞数
+      const likedRedisKeys = taskList.map(item => `target:wujie:${item.id}:likes`)
+      const likedCountList = await this.redisCacheService.getMultiple(likedRedisKeys)
+      const transformTaskList = taskList.map((item, index) => {
+        return {
+          ...item,
+          likedCount: Number(likedCountList[index] || 0),
+          user: {
+            id: curUser.id,
+            name: curUser.name || curUser.username,
+            head: curUser.avatar,
+          }
+        }
+      })
+      // 4. 合并返回结果
+      return {
+        list: transformTaskList,
+        total,
+      };
+    } catch (e) {
+      console.log('e', e);
+      if (e.response) {
+        console.log('error.response.data', e.response.data);
+        console.log('error.config.headers', e.config.headers);
+        console.log('error.response.status', e.response.status);
+        console.log('error.response.statusText', e.response.statusText);
+        console.log('error.response.headers', e.response.headers);
+        throw new HttpException({ desc: '获取用户已完成作画数据' + e.response.data.message, code: e.response.data.code }, e.response.status);
+      }
+
+      throw new HttpException({ desc: e.message }, 500);
+    }
+  }
+
+  @ApiOperation({ summary: '获取用户已收藏作画数据' })
+  @Post('batchGetCollectedDrawInfoByUser')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async batchGetCollectedDrawInfoByUser(@Body() body: QueryDrawTaskDto, @Req() req: Request) {
+    try {
+      const userId = body.userId
+      // 1. 先查询用户已收藏的绘画，按时间倒排
+      const [collecteddAction, total] = await this.actionService.findActionByCondition({
+        sourceId: userId,
+        actionType: 'COLLECT',
+        sourceType: 'user',
+        targetType: 'wujie',
+        page: body.page,
+        size: body.size
+      })
+      if (collecteddAction.length === 0) {
+        return {
+          list: [],
+          total,
+        }
+      }
+
+      const collectedDrawIds = collecteddAction.map(item => item.targetId)
+      const collectedDrawList = await this.wujieService.batchQueryDrawTasksByIds(collectedDrawIds)
+      console.log('collectedDrawList', collectedDrawList)
+      // 获取作品涉及的所有用户信息
+      const userIds = Array.from(new Set(collectedDrawList.map(item => item.userId)))
+      const usersMapById = flatMapByKey(await this.userService.queryUsersByIds(userIds), "id")
+      // 批量查询这批作品对应的点赞数
+      const likedRedisKeys = collectedDrawList.map(item => `target:wujie:${item.id}:likes`)
+      const likedCountList = await this.redisCacheService.getMultiple(likedRedisKeys)
+      const transformTaskList = collectedDrawList.map((item, index) => {
+        const curUser = usersMapById[item.userId][0]
+        return {
+          ...item,
+          likedCount: Number(likedCountList[index] || 0),
+          user: curUser ? {
+            id: curUser.id,
+            name: curUser.name || curUser.username,
+            head: curUser.avatar,
+          } : {}
+        }
+      })
+      // 4. 合并返回结果
+      return {
+        list: transformTaskList,
+        total: collectedDrawList.length,
+      };
+    } catch (e) {
+      console.log('e', e);
+      if (e.response) {
+        console.log('error.response.data', e.response.data);
+        console.log('error.config.headers', e.config.headers);
+        console.log('error.response.status', e.response.status);
+        console.log('error.response.statusText', e.response.statusText);
+        console.log('error.response.headers', e.response.headers);
+        throw new HttpException({ desc: '获取用户已收藏作画数据' + e.response.data.message, code: e.response.data.code }, e.response.status);
+      }
+
+      throw new HttpException({ desc: e.message }, 500);
+    }
+  }
+
+  @ApiOperation({ summary: '获取当前作画的评论列表' })
+  @Post('getDrawCommentList')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getDrawCommentList(@Body() body: { id: number }, @Req() req) {
+    const [drawCommentActions, total] = await this.actionService.findActionByCondition({
+      sourceType: 'user',
+      targetType: 'wujie',
+      targetId: body.id,
+      actionType: 'COMMENT',
+    })
+    const userIds = Array.from(new Set(drawCommentActions.map(item => item.sourceId)))
+    const usersMapById = flatMapByKey(await this.userService.queryUsersByIds(userIds), "id")
+    const transformList = drawCommentActions.map(item => {
+      const curUser = usersMapById[item.sourceId][0]
+      return {
+        createdAt: item.createdAt,
+        content: item.actionContent,
+        user: curUser ? {
+          id: curUser.id,
+          name: curUser.name || curUser.username,
+          head: curUser.avatar,
+        } : {}
+      }
+    })
+    return {
+      list: transformList,
+      total,
+    }
+  }
+
   @ApiOperation({ summary: '获取全局已完成作画数据' })
   @Post('batchGetGlobalFinishedDrawInfo')
   async batchGetGlobalFinishedDrawInfo(@Body() body: GlobalQueryDrawTaskDto, @Req() req: Request) {
-    // 1. 先查询全局完成的绘画，按时间倒排
-    const [taskList, total] = await this.wujieService.batchQueryGlobalDrawTasks({
-      page: body.page,
-      size: body.size,
-    });
+    try {
+      // 1. 先查询全局完成的绘画，按时间倒排
+      const [taskList, total] = await this.wujieService.batchQueryGlobalDrawTasks({
+        page: body.page,
+        size: body.size,
+      });
+      // 获取作品涉及的所有用户信息
+      const userIds = Array.from(new Set(taskList.map(item => item.userId)))
+      const usersMapById = flatMapByKey(await this.userService.queryUsersByIds(userIds), "id")
 
-    // 4. 合并返回结果
-    return {
-      list: taskList,
-      total,
-    };
-  } catch(e) {
-    console.log('e', e);
-    if (e.response) {
-      console.log('error.response.data', e.response.data);
-      console.log('error.config.headers', e.config.headers);
-      console.log('error.response.status', e.response.status);
-      console.log('error.response.statusText', e.response.statusText);
-      console.log('error.response.headers', e.response.headers);
-      throw new HttpException({ desc: '获取全局已完成作画数据' + e.response.data.message, code: e.response.data.code }, e.response.status);
+      // 批量查询这批作品对应的点赞数
+      const likedRedisKeys = taskList.map(item => `target:wujie:${item.id}:likes`)
+      const likedCountList = await this.redisCacheService.getMultiple(likedRedisKeys)
+
+      const transformTaskList = taskList.map((item, index) => {
+        // // 查询当前图片的被点赞数
+        // const likedRedisKey = `target:wujie:${item.id}:likes`
+        // const likedCount = Number((await this.redisCacheService.get({ key: likedRedisKey })) || 0)
+
+        const curUser = usersMapById[item.userId][0]
+        return {
+          ...item,
+          likedCount: Number(likedCountList[index] || 0),
+          user: curUser ? {
+            id: curUser.id,
+            name: curUser.name || curUser.username,
+            head: curUser.avatar,
+          } : {}
+        }
+      })
+
+      // 4. 合并返回结果
+      return {
+        list: transformTaskList,
+        total,
+      };
+    } catch (e) {
+      console.log('e', e);
+      if (e.response) {
+        console.log('error.response.data', e.response.data);
+        console.log('error.config.headers', e.config.headers);
+        console.log('error.response.status', e.response.status);
+        console.log('error.response.statusText', e.response.statusText);
+        console.log('error.response.headers', e.response.headers);
+        throw new HttpException({ desc: '获取全局已完成作画数据' + e.response.data.message, code: e.response.data.code }, e.response.status);
+      }
+
+      throw new HttpException({ desc: e.message }, 500);
     }
-
-    throw new HttpException({ desc: e.message }, 500);
   }
 
   @ApiOperation({ summary: '批量获取单用户作画任务信息' })

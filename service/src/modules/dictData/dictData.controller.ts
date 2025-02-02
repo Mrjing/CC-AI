@@ -9,7 +9,7 @@ import { DictDataEntity } from './dictData.entity';
 import { AdminAuthGuard } from '@/common/auth/adminAuth.guard';
 import { JwtAuthGuard } from '@/common/auth/jwtAuth.guard';
 
-@ApiTags('字典数据')
+@ApiTags('dictData')
 @Controller('dictData')
 export class DictDataController {
   constructor(private readonly dictDataService: DictDataService) { }
