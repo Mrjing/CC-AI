@@ -5,7 +5,7 @@ import { UpdateActionDto } from './dto/updateAction.dto';
 import { QueryActionDto } from './dto/queryAction.dto';
 import { ActionEntity } from './action.entity';
 
-@Controller('actions')
+@Controller('action')
 export class ActionController {
   constructor(private readonly actionService: ActionService) { }
 
@@ -15,8 +15,18 @@ export class ActionController {
   }
 
   @Post('dislike')
-  async dislike(@Body() createActionDto: CreateActionDto): Promise<ActionEntity> {
-    return this.actionService.createAction({ ...createActionDto, actionType: 'DISLIKE' });
+  async dislike(@Body() createActionDto: CreateActionDto): Promise<void> {
+    return this.actionService.removeActionByCondition({ ...createActionDto, actionType: 'DISLIKE' });
+  }
+
+  @Post('collect')
+  async collect(@Body() createActionDto: CreateActionDto): Promise<ActionEntity> {
+    return this.actionService.createAction({ ...createActionDto, actionType: 'COLLECT' });
+  }
+
+  @Post('uncollect')
+  async uncollect(@Body() createActionDto: CreateActionDto): Promise<void> {
+    return this.actionService.removeActionByCondition({ ...createActionDto, actionType: 'UNCOLLECT' });
   }
 
   @Post('follow')
@@ -25,8 +35,8 @@ export class ActionController {
   }
 
   @Post('unfollow')
-  async unfollow(@Body() createActionDto: CreateActionDto): Promise<ActionEntity> {
-    return this.actionService.createAction({ ...createActionDto, actionType: 'UNFOLLOW' });
+  async unfollow(@Body() createActionDto: CreateActionDto): Promise<void> {
+    return this.actionService.removeActionByCondition({ ...createActionDto, actionType: 'UNFOLLOW' });
   }
 
   @Post('comment')
@@ -40,7 +50,7 @@ export class ActionController {
   }
 
   @Get('query')
-  async findAll(@Body() body: QueryActionDto): Promise<ActionEntity[]> {
+  async findAll(@Body() body: QueryActionDto) {
     return this.actionService.findActionByCondition(body);
   }
 

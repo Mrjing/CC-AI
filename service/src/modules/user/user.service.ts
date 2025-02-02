@@ -35,9 +35,8 @@ import { UpdateUserStatusDto } from './dto/updateUserStatus.dto';
 import { ResetUserPassDto } from './dto/resetUserPass.dto';
 import { ConfigEntity } from '../globalConfig/config.entity';
 import { WhiteListEntity } from '../chatgpt/whiteList.entity';
-import { AuthService } from '../auth/auth.service';
+import { ActionEntity } from '../action/action.entity';
 import { UserRegisterByPhoneDto } from '../auth/dto/userRegisterByPhone.dto';
-import { RetrieveUserDto } from './dto/retrieve.dto';
 
 @Injectable()
 export class UserService {
@@ -55,6 +54,8 @@ export class UserService {
     private readonly configEntity: Repository<ConfigEntity>,
     @InjectRepository(AccountBalanceEntity)
     private readonly accountBalanceEntity: Repository<AccountBalanceEntity>,
+    @InjectRepository(ActionEntity)
+    private readonly actionEntity: Repository<ActionEntity>
   ) { }
 
   /* create and verify */
@@ -311,7 +312,7 @@ export class UserService {
   async getUserInfoNew(userId: number) {
     const userInfo: any = await this.userEntity.findOne({
       where: { id: userId },
-      select: ['username', 'avatar', 'role', 'email', 'sign', 'inviteCode', 'openId', 'consecutiveDays', 'phone', 'name'],
+      select: ['id', 'username', 'avatar', 'role', 'email', 'sign', 'inviteCode', 'openId', 'consecutiveDays', 'phone', 'name'],
     });
     if (!userInfo) {
       throw new HttpException('当前用户信息失效、请重新登录！', HttpStatus.UNAUTHORIZED);
@@ -624,4 +625,9 @@ export class UserService {
   async createUser(userInfo) {
     return await this.userEntity.save(userInfo);
   }
+
+  // // 查询用户个人详情页
+  // async queryUserDetail(userId: number) {
+
+  // }
 }

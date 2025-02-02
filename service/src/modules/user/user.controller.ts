@@ -16,11 +16,13 @@ import { RetrieveUserDto } from './dto/retrieve.dto';
 import { CreateUserDto } from './dto/createUser.dto';
 import * as bcrypt from 'bcryptjs';
 import { UserStatusEnum, UserStatusErrMsg } from '@/common/constants/user.constant';
+import { RedisCacheService } from '../redisCache/redisCache.service'
+import { WujieService } from '../wujie/wujie.service'
 
 @Controller('user')
 @ApiTags('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService, private readonly redisCacheService: RedisCacheService, private readonly wujieService: WujieService) { }
 
   @Post('update')
   @ApiOperation({ summary: '更新用户信息' })
@@ -114,5 +116,42 @@ export class UserController {
       status: UserStatusEnum.ACTIVE,
     };
     return await this.userService.createUser(newUserData);
+  }
+
+  @Post('queryUserDetail')
+  @ApiOperation({ summary: '查询用户详情' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async queryUserDetail(@Body() body: {
+    userId: number
+  }, @Req() req: Request) {
+    const userId = body.userId;
+    // 1. 查询用户信息
+    const user = await this.userService.getUserInfoNew(userId)
+    // 2. 查询用户关注其他用户数
+    const redisKey = `source:user:${userId}:follows`
+    const followCount = Number(await this.redisCacheService.get({ key: redisKey }) || 0)
+    // 3. 查询用户粉丝数
+    const redisKey1 = `target:user:${userId}:follows`
+    const fansCount = Number(await this.redisCacheService.get({ key: redisKey1 }) || 0)
+    // 4. 查询用户累计作品被点赞总数
+    // 4.1 查询用户所有作品ID
+    const userAllDrawWorks = await this.wujieService.queryFinishedDrawTasksByUserId(userId)
+
+    const drawIds = userAllDrawWorks.map(item => item.id)
+    console.log('drawIds', drawIds)
+    // 4.2 查询各作品被点赞数并 累计计算
+    let totalLikes = 0
+    for (let id of drawIds) {
+      const redisKey = `target:wujie:${id}:likes`
+      const likesCount = Number(await this.redisCacheService.get({ key: redisKey }) || 0)
+      totalLikes += likesCount
+    }
+    return {
+      user,
+      followCount,
+      fansCount,
+      totalLikes
+    }
   }
 }

@@ -11,4 +11,8 @@ export class GlobalQueryDrawTaskDto {
   @ApiProperty({ example: 10, description: '每页数量', required: false })
   @IsOptional()
   size: number;
+
+  @ApiProperty({ example: 1, description: '用户id', required: false })
+  @IsOptional()
+  userId: number;
 }

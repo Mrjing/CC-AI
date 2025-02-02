@@ -19,6 +19,8 @@ import { ChatLogEntity } from '../chatLog/chatLog.entity';
 import { ChatGroupEntity } from '../chatGroup/chatGroup.entity';
 import { MidjourneyEntity } from '../midjourney/midjourney.entity';
 import { AccountBalanceEntity } from '../accountBalance/accountBalance.entity';
+import { ActionEntity } from '../action/action.entity';
+
 
 @Global()
 @Module({
@@ -38,10 +40,11 @@ import { AccountBalanceEntity } from '../accountBalance/accountBalance.entity';
       ChatGroupEntity,
       MidjourneyEntity,
       AccountBalanceEntity,
+      ActionEntity
     ]),
   ],
   controllers: [UserController],
   providers: [UserService, VerificationService, UserBalanceService, RedisCacheService],
   exports: [UserService],
 })
-export class UserModule {}
+export class UserModule { }
