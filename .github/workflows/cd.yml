@@ -64,7 +64,7 @@ jobs:
           nvm use 18
           npm config set registry http://mirrors.cloud.tencent.com/npm/
           npm i -g pm2
-          npm install
+          npm install --legacy-peer-deps
           npm run restart
           EOF
         env:
